@@ -18,6 +18,7 @@
     <link rel="manifest" href="https://painel.teamcriativa.com/icones/site.webmanifest" />
 
     <link rel="stylesheet" href="cliente-index.css">
+    <link rel="stylesheet" href="modules/conteudo/conteudo.css">
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -82,6 +83,7 @@
     <i class="ph ph-list"></i> Menu
 </button>
 
+<!-- ── Scripts principais (ordem obrigatória) ── -->
 <script>
 // ── Supabase config ───────────────────────────────────────────
 const SUPABASE_URL      = 'https://owpboqevrtthsupugcrt.supabase.co';
@@ -96,27 +98,6 @@ function getSessao() {
 }
 function setSessao(s) { sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
 function logout() { sessionStorage.removeItem(SESSION_KEY); window.location.href = 'cliente-login.html'; }
-
-// ── Módulos (stubs escaláveis) ────────────────────────────────
-// Para adicionar funcionalidade: implemente render(container, conta)
-const MODULOS = [
-    {
-        id: 'conteudos', label: 'Conteúdos', icon: 'ph-images',
-        render(el, conta) { _placeholder(el, 'ph-images', 'Conteúdos', 'Aqui você verá os conteúdos produzidos para sua marca.'); }
-    },
-    {
-        id: 'agendamentos', label: 'Agendamentos', icon: 'ph-calendar-check',
-        render(el, conta) { _placeholder(el, 'ph-calendar-check', 'Agendamentos', 'Visualize e acompanhe os agendamentos de publicação.'); }
-    },
-    {
-        id: 'planejamento', label: 'Planejamento', icon: 'ph-kanban',
-        render(el, conta) { _placeholder(el, 'ph-kanban', 'Planejamento', 'Acompanhe o planejamento estratégico da sua presença digital.'); }
-    },
-    {
-        id: 'drive', label: 'Drive', icon: 'ph-folder-open',
-        render(el, conta) { _placeholder(el, 'ph-folder-open', 'Drive', 'Acesse os arquivos e materiais produzidos para você.'); }
-    },
-];
 
 function _placeholder(el, icon, title, desc) {
     el.innerHTML = `
@@ -194,7 +175,6 @@ function _renderDropdown(contas, contaAtual) {
         drop.appendChild(item);
     });
 
-    // Separador + sair
     drop.insertAdjacentHTML('beforeend', '<div class="c-drop-divider"></div>');
     const btnSair = document.createElement('button');
     btnSair.className = 'c-drop-logout';
@@ -211,7 +191,6 @@ function _toggleDrop(force) {
     drop.classList.toggle('open', abrir);
 }
 
-// ── Sidebar mobile ────────────────────────────────────────────
 function _fecharSidebar() {
     document.getElementById('c-sidebar').classList.remove('open');
     document.getElementById('mob-overlay').classList.remove('open');
@@ -227,7 +206,6 @@ document.addEventListener('DOMContentLoaded', () => {
     _atualizarHeaderConta(contaAtual);
     _renderDropdown(contas, contaAtual);
 
-    // Oculta caret se só tem 1 conta (mas mantém dropdown para logout)
     if (contas.length <= 1) document.getElementById('account-caret').style.display = 'none';
 
     document.getElementById('account-btn').addEventListener('click', e => {
@@ -250,5 +228,34 @@ document.addEventListener('DOMContentLoaded', () => {
     carregarModulo('conteudos');
 });
 </script>
+
+<!-- Módulos — carregados APÓS o script principal -->
+<script src="modules/conteudo/conteudo-carousel.js"></script>
+<script src="modules/conteudo/conteudo-modal.js"></script>
+<script src="modules/conteudo/conteudo-grid.js"></script>
+<script src="modules/conteudo/conteudo.js"></script>
+
+<!-- MODULOS precisa de render() já definido, então fica por último -->
+<script>
+const MODULOS = [
+    {
+        id: 'conteudos', label: 'Conteúdos', icon: 'ph-images',
+        render(el, conta) { render(el, conta); }
+    },
+    {
+        id: 'agendamentos', label: 'Agendamentos', icon: 'ph-calendar-check',
+        render(el, conta) { _placeholder(el, 'ph-calendar-check', 'Agendamentos', 'Visualize e acompanhe os agendamentos de publicação.'); }
+    },
+    {
+        id: 'planejamento', label: 'Planejamento', icon: 'ph-kanban',
+        render(el, conta) { _placeholder(el, 'ph-kanban', 'Planejamento', 'Acompanhe o planejamento estratégico da sua presença digital.'); }
+    },
+    {
+        id: 'drive', label: 'Drive', icon: 'ph-folder-open',
+        render(el, conta) { _placeholder(el, 'ph-folder-open', 'Drive', 'Acesse os arquivos e materiais produzidos para você.'); }
+    },
+];
+</script>
+
 </body>
 </html>

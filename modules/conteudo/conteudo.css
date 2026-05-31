@@ -1,0 +1,319 @@
+/* ══════════════════════════════════════
+   MÓDULO — CONTEÚDOS
+══════════════════════════════════════ */
+
+/* ── Cabeçalho da seção ── */
+.ct-header { margin-bottom: 20px; }
+.ct-title {
+    font-size: 18px; font-weight: 600;
+    letter-spacing: -0.025em; color: var(--text-1);
+}
+.ct-subtitle { font-size: 12.5px; color: var(--text-3); margin-top: 3px; }
+
+/* ── Loading / vazio ── */
+.ct-loading, .ct-empty {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 320px; gap: 10px;
+    color: var(--text-3); font-size: 13.5px;
+    text-align: center;
+    animation: fadeUp .22s ease both;
+}
+.ct-empty-icon {
+    width: 52px; height: 52px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: var(--text-3); margin-bottom: 4px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.ct-spin { animation: spin .8s linear infinite; display: inline-block; }
+
+/* ══════════════════════════════════════
+   GRID
+══════════════════════════════════════ */
+.ct-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    animation: fadeUp .2s ease both;
+}
+@media (max-width: 520px) { .ct-grid { gap: 0.5px; } }
+
+/* ── Card ── */
+.ct-card {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    background: var(--border);
+    overflow: hidden;
+    cursor: pointer;
+}
+.ct-card:hover .ct-card-overlay { opacity: 1; }
+.ct-card:active { transform: scale(.98); }
+
+.ct-card-thumb {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transition: transform .3s ease;
+}
+.ct-card:hover .ct-card-thumb { transform: scale(1.03); }
+
+.ct-card-video-thumb {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block; pointer-events: none;
+}
+.ct-card-no-media {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); color: var(--text-3); font-size: 26px;
+}
+
+/* Overlay hover */
+.ct-card-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.28);
+    opacity: 0; transition: opacity .22s ease;
+    display: flex; align-items: center; justify-content: center;
+}
+.ct-card-overlay i {
+    font-size: 28px; color: #fff;
+    filter: drop-shadow(0 1px 4px rgba(0,0,0,.4));
+}
+
+/* Badge de tipo */
+.ct-card-type {
+    position: absolute; top: 6px; right: 7px;
+    display: flex; align-items: center; gap: 3px;
+}
+.ct-card-type i {
+    font-size: 18px; color: #fff;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,.6));
+}
+
+/* ══════════════════════════════════════
+   MODAL — backdrop
+══════════════════════════════════════ */
+.ct-modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: ct-fade-in .18s ease both;
+}
+@keyframes ct-fade-in { from { opacity:0; } to { opacity:1; } }
+
+/* ── Caixa do modal ── */
+.ct-modal {
+    position: relative;
+    width: 100%;
+    max-width: 420px;           /* largura máx = proporção 3×4 confortável */
+    max-height: calc(100dvh - 40px);
+    background: var(--surface);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,.4);
+    animation: ct-modal-in .22s cubic-bezier(.22,1,.36,1) both;
+    display: flex;
+    flex-direction: column;
+}
+@keyframes ct-modal-in {
+    from { opacity:0; transform:scale(.95) translateY(10px); }
+    to   { opacity:1; transform:scale(1)   translateY(0);    }
+}
+
+/* ── Botão fechar flutuante ── */
+.ct-modal-close {
+    position: absolute;
+    top: 10px; right: 10px;
+    z-index: 10;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(4px);
+    border: none; border-radius: 50%;
+    cursor: pointer; color: #fff; font-size: 15px;
+    transition: background var(--t);
+}
+.ct-modal-close:hover { background: rgba(0,0,0,.7); }
+
+/* ── Scroll único ── */
+.ct-modal-scroll {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+.ct-modal-scroll::-webkit-scrollbar { width: 4px; }
+.ct-modal-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ── Bloco de mídia: proporção 3×4 exata ── */
+.ct-modal-media-wrap {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background: #000;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+}
+.ct-modal-media-wrap img,
+.ct-modal-media-wrap video {
+    width: 100%; height: 100%;
+    object-fit: contain; display: block;
+}
+
+/* ── Corpo abaixo da mídia ── */
+.ct-modal-body {
+    padding: 20px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ── Seção (legenda / informações) ── */
+.ct-modal-section { display: flex; flex-direction: column; gap: 7px; }
+
+.ct-modal-section-label {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .09em; text-transform: uppercase;
+    color: var(--text-3);
+}
+
+.ct-modal-caption {
+    font-size: 13px; line-height: 1.7;
+    color: var(--text-2); white-space: pre-wrap; word-break: break-word;
+}
+.ct-modal-caption-empty {
+    font-size: 13px; color: var(--text-3); font-style: italic;
+}
+
+/* ── Linhas de informação ── */
+.ct-modal-info-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+}
+.ct-modal-info-row:last-child { border-bottom: none; }
+.ct-modal-info-key { color: var(--text-3); font-weight: 500; }
+.ct-modal-info-val { color: var(--text-1); font-weight: 500; display:flex; align-items:center; }
+
+/* ── Botões de ação ── */
+.ct-modal-actions {
+    display: flex; flex-direction: column; gap: 8px;
+}
+
+.ct-action-btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 7px; height: 42px;
+    font-family: var(--font); font-size: 13px; font-weight: 600;
+    border-radius: var(--radius-md); border: 1.5px solid;
+    cursor: pointer; transition: all var(--t);
+    width: 100%;
+}
+.ct-action-btn i { font-size: 16px; }
+
+.ct-action-btn--aprovar {
+    background: #F0FAF4; border-color: #B8E6CB; color: var(--success);
+}
+.ct-action-btn--aprovar:hover { background: #D6F5E5; }
+
+.ct-action-btn--recusar {
+    background: #FDF2F1; border-color: #EFC4C0; color: var(--danger);
+}
+.ct-action-btn--recusar:hover { background: #FAE0DC; }
+
+.ct-action-btn--editar {
+    background: var(--surface-2); border-color: var(--border); color: var(--text-2);
+}
+.ct-action-btn--editar:hover { background: var(--bg); color: var(--text-1); }
+
+.ct-action-btn--download {
+    background: var(--text-1); border-color: var(--text-1); color: #fff;
+}
+.ct-action-btn--download:hover { background: #000; }
+
+/* ══════════════════════════════════════
+   CARROSSEL
+══════════════════════════════════════ */
+.ct-carousel {
+    position: absolute; inset: 0;
+    overflow: hidden;
+    touch-action: pan-y;
+    user-select: none;
+}
+.ct-carousel-track {
+    display: flex; height: 100%;
+    transition: transform .32s cubic-bezier(.4,0,.2,1);
+    will-change: transform;
+}
+.ct-carousel-slide {
+    flex: 0 0 100%; width: 100%; height: 100%;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    background: #000; overflow: hidden;
+}
+.ct-carousel-slide img,
+.ct-carousel-slide video {
+    width: 100%; height: 100%;
+    object-fit: contain; display: block;
+}
+
+/* Setas */
+.ct-carousel-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 30px; height: 30px;
+    background: rgba(255,255,255,.88);
+    backdrop-filter: blur(4px);
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 15px; color: var(--text-1);
+    z-index: 10; transition: all var(--t);
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.ct-carousel-arrow:hover { background: #fff; transform: translateY(-50%) scale(1.05); }
+.ct-carousel-arrow--prev { left: 8px; }
+.ct-carousel-arrow--next { right: 8px; }
+.ct-carousel-arrow:disabled { opacity:0; pointer-events:none; }
+
+/* Dots */
+.ct-carousel-dots {
+    position: absolute; bottom: 8px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 4px; z-index: 10;
+}
+.ct-carousel-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(255,255,255,.45);
+    transition: all .22s ease; cursor: pointer;
+}
+.ct-carousel-dot.active { background: #fff; width: 14px; border-radius: 99px; }
+
+/* Play icon sobre vídeo */
+.ct-carousel-play-icon {
+    position: absolute; top:50%; left:50%;
+    transform: translate(-50%,-50%);
+    font-size: 44px; color: rgba(255,255,255,.85);
+    pointer-events: none;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,.4));
+}
+
+/* ── Responsivo mobile ── */
+@media (max-width: 480px) {
+    .ct-modal-backdrop { padding: 0; align-items: flex-end; }
+    .ct-modal {
+        max-width: 100%;
+        border-radius: 16px 16px 0 0;
+        max-height: 96dvh;
+    }
+}
+
+@keyframes fadeUp {
+    from { opacity:0; transform:translateY(8px); }
+    to   { opacity:1; transform:translateY(0); }
+}

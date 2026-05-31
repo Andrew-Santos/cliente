@@ -263,7 +263,7 @@ body {
 .c-content {
     flex: 1;
     min-width: 0;
-    padding: 28px 24px;
+    padding: 0;
     overflow-y: auto;
 }
 
@@ -364,7 +364,7 @@ body {
     #mob-overlay { display: block; }
     #btn-mob-menu { display: flex; }
 
-    .c-content { padding: 20px 16px 80px; }
+    .c-content { padding: 2px; }
     .c-header { padding: 0 14px; }
     .c-account-name { max-width: 110px; }
     .c-header-badge { display: none; }
