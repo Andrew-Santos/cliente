@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Criativa — Portal do Cliente</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css"/>
+
+    <link rel="icon" type="image/png" href="https://painel.teamcriativa.com/icones/favicon-96x96.png" sizes="96x96" />
+    <link rel="shortcut icon" href="https://painel.teamcriativa.com/icones/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://painel.teamcriativa.com/icones/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Criativa" />
+
+    <link rel="stylesheet" href="cliente-login.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="page">
+
+    <!-- PAINEL ESQUERDO -->
+    <aside class="visual-panel" aria-hidden="true">
+        <div>
+            <div class="visual-logo">
+                <img src="logo criativa.svg" alt="Criativa">
+            </div>
+            <div class="visual-headline">
+                <p class="visual-eyebrow">Portal do Cliente</p>
+                <h1 class="visual-title">Tudo sobre a sua<br><em>presença digital.</em></h1>
+                <p class="visual-desc">Acompanhe seus conteúdos, agendamentos e planejamento em um só lugar.</p>
+            </div>
+        </div>
+        <p class="visual-footer">© Criativa ERP — Acesso restrito</p>
+        <div class="visual-line" aria-hidden="true"></div>
+    </aside>
+
+    <!-- PAINEL DIREITO -->
+    <main class="form-panel">
+
+        <div class="form-header">
+            <div class="form-header-top">
+                <img src="logo criativa.svg" alt="Criativa ERP"
+                     style="height:40px;width:auto;">
+                <span class="status-badge">Acesso seguro</span>
+            </div>
+            <div class="form-tab-line">
+                <span class="form-tab-label">
+                    <i class="ph ph-sign-in"></i> Entrar
+                </span>
+            </div>
+        </div>
+
+        <div class="form-body">
+
+            <h2 class="panel-title">Bem-vindo</h2>
+            <p class="panel-sub">Informe seu CPF ou CNPJ para acessar o portal.</p>
+
+            <div class="alert alert-err" id="login-alert" role="alert">
+                <i class="ph-fill ph-warning-circle"></i>
+                <span>Documento não encontrado.</span>
+            </div>
+
+            <div class="field" id="f-doc">
+                <label for="doc-input">CPF ou CNPJ</label>
+                <div class="input-wrap">
+                    <i class="ph ph-identification-card"></i>
+                    <input
+                        type="text"
+                        id="doc-input"
+                        placeholder="000.000.000-00"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        maxlength="18"
+                    >
+                </div>
+                <span class="field-error">Informe um CPF ou CNPJ válido.</span>
+            </div>
+
+            <button class="btn-login" id="btn-login">
+                <i class="ph ph-sign-in"></i> Acessar portal
+            </button>
+
+        </div>
+    </main>
+
+</div>
+
+<script>
+// ── Supabase ──────────────────────────────────────────────────
+const SUPABASE_URL      = 'https://owpboqevrtthsupugcrt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93cGJvcWV2cnR0aHN1cHVnY3J0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5MjY4MDQsImV4cCI6MjA2OTUwMjgwNH0.7RjkVOUT6ByewP0D6FgHQjZDCoi4GYnGT6BMj794MfQ';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── Sessão ────────────────────────────────────────────────────
+const SESSION_KEY = 'criativa_cliente_sessao';
+function getSessao() { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY)); } catch { return null; } }
+function salvarSessao(contas, contaAtual) { sessionStorage.setItem(SESSION_KEY, JSON.stringify({ contas, contaAtual })); }
+
+if (getSessao()) window.location.href = 'cliente-index.html';
+
+// ── Validações ────────────────────────────────────────────────
+function validarCPF(cpf) {
+    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+    let s = 0;
+    for (let i = 0; i < 9; i++) s += +cpf[i] * (10 - i);
+    let r = (s * 10) % 11; if (r >= 10) r = 0;
+    if (r !== +cpf[9]) return false;
+    s = 0;
+    for (let i = 0; i < 10; i++) s += +cpf[i] * (11 - i);
+    r = (s * 10) % 11; if (r >= 10) r = 0;
+    return r === +cpf[10];
+}
+function validarCNPJ(cnpj) {
+    if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;
+    const calc = n => {
+        let s = 0, p = n - 7;
+        for (let i = 0; i < n; i++) { s += +cnpj[i] * p--; if (p < 2) p = 9; }
+        const r = s % 11; return r < 2 ? 0 : 11 - r;
+    };
+    return calc(12) === +cnpj[12] && calc(13) === +cnpj[13];
+}
+
+// ── Máscara dinâmica ──────────────────────────────────────────
+document.getElementById('doc-input').addEventListener('input', function () {
+    let raw = this.value.replace(/\D/g, '').slice(0, 14);
+    let out = '';
+    if (raw.length <= 11) {
+        if      (raw.length > 9) out = raw.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+        else if (raw.length > 6) out = raw.replace(/(\d{3})(\d{3})(\d{1,3})/,         '$1.$2.$3');
+        else if (raw.length > 3) out = raw.replace(/(\d{3})(\d{1,3})/,                 '$1.$2');
+        else                     out = raw;
+    } else {
+        if      (raw.length > 12) out = raw.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, '$1.$2.$3/$4-$5');
+        else if (raw.length > 8)  out = raw.replace(/(\d{2})(\d{3})(\d{3})(\d{1,4})/,         '$1.$2.$3/$4');
+        else if (raw.length > 5)  out = raw.replace(/(\d{2})(\d{3})(\d{1,3})/,                 '$1.$2.$3');
+        else if (raw.length > 2)  out = raw.replace(/(\d{2})(\d{1,3})/,                         '$1.$2');
+        else                      out = raw;
+    }
+    this.value = out;
+});
+
+// ── UI helpers ────────────────────────────────────────────────
+function showAlert(msg) {
+    const el = document.getElementById('login-alert');
+    el.querySelector('span').textContent = msg;
+    el.classList.add('vis');
+}
+function hideAlert() { document.getElementById('login-alert').classList.remove('vis'); }
+function setErr(bad) { document.getElementById('f-doc').classList.toggle('err', bad); }
+
+// ── Login ─────────────────────────────────────────────────────
+async function doLogin() {
+    hideAlert();
+    const raw = document.getElementById('doc-input').value.replace(/\D/g, '');
+    const isCPF = raw.length === 11, isCNPJ = raw.length === 14;
+
+    if (!isCPF && !isCNPJ)               { setErr(true); showAlert('Informe um CPF ou CNPJ válido.'); return; }
+    if (isCPF  && !validarCPF(raw))       { setErr(true); showAlert('CPF inválido.'); return; }
+    if (isCNPJ && !validarCNPJ(raw))      { setErr(true); showAlert('CNPJ inválido.'); return; }
+    setErr(false);
+
+    const btn = document.getElementById('btn-login');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-circle-notch spin"></i> Verificando…';
+
+    try {
+        const { data, error } = await db
+            .from('clientes')
+            .select('id, responsavel, usuario, profile_photo, id_instagram, CPF_CNPJ, valor')
+            .eq('CPF_CNPJ', raw)
+            .eq('ativo', true);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            showAlert('Documento não encontrado ou conta inativa. Fale com a Criativa.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ph ph-sign-in"></i> Acessar portal';
+            return;
+        }
+
+        salvarSessao(data, data[0]);
+        btn.innerHTML = '<i class="ph ph-check"></i> Acesso liberado!';
+        setTimeout(() => { window.location.href = 'cliente-index.html'; }, 600);
+
+    } catch (e) {
+        console.error('[login]', e);
+        showAlert('Erro de conexão. Tente novamente.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph ph-sign-in"></i> Acessar portal';
+    }
+}
+
+document.getElementById('btn-login').addEventListener('click', doLogin);
+document.getElementById('doc-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>
