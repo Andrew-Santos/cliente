@@ -1,5 +1,7 @@
 /* ══════════════════════════════════════
-   conteudo.js  —  Orquestrador
+   conteudo.js  v2  —  Orquestrador
+   Carrega TODOS os posts do cliente
+   (sem filtro de status).
 ══════════════════════════════════════ */
 
 let _posts  = [];
@@ -17,8 +19,6 @@ async function render(el, conta) {
     el.innerHTML = _htmlShell(conta);
     _setGridState('loading');
 
-    // db é declarado no script principal do cliente-index.html
-    // garante que está disponível como variável global
     const supabaseDb = typeof db !== 'undefined' ? db : window.db;
 
     if (!supabaseDb) {
@@ -28,16 +28,21 @@ async function render(el, conta) {
     }
 
     try {
+        // ── Busca posts com join para nome do colaborador ──
         const { data, error } = await supabaseDb
             .from('postagens')
-            .select('id, id_cliente, status, type, title, media, captions, data_agendamento, criado_em')
+            .select(`
+                id, id_cliente, id_colaborador, status, type, title,
+                media, captions, data_agendamento, aprovado_adm_em,
+                colaboradores ( nome )
+            `)
             .eq('id_cliente', conta.id)
-            .eq('status', 'EM_ANALISE_DO_CLIENTE')
-            .order('criado_em', { ascending: false });
+            .neq('type', 'STORIES')
+            .order('aprovado_adm_em', { ascending: true });
 
         if (error) throw error;
 
-        console.log('[conteudo] posts:', data?.length, data);
+        console.log('[conteudo] posts carregados:', data?.length, data);
 
         _posts = data || [];
 
@@ -67,7 +72,7 @@ function _setGridState(state) {
         loading: `<i class="ph ph-circle-notch ct-spin" style="font-size:28px;color:var(--text-3);"></i>
                   <span>Carregando conteúdos…</span>`,
         vazio:   `<div class="ct-empty-icon"><i class="ph ph-images"></i></div>
-                  <span>Nenhum conteúdo aguardando aprovação.</span>`,
+                  <span>Nenhum conteúdo encontrado.</span>`,
         erro:    `<div class="ct-empty-icon" style="color:var(--danger);">
                       <i class="ph ph-warning"></i>
                   </div>
@@ -84,7 +89,6 @@ function _setGridState(state) {
 
 function _htmlShell(conta) {
     return `
-
         <div id="ct-grid-wrap">
             <div class="ct-grid" id="ct-grid" style="display:none;"></div>
         </div>`;

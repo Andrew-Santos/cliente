@@ -1,28 +1,35 @@
 /* ══════════════════════════════════════
-   TOKENS — mesma paleta do ERP interno
+   TOKENS
 ══════════════════════════════════════ */
 :root {
-    --bg:          #F6F5F2;
+    --bg:          #F5F4F1;
     --surface:     #FFFFFF;
     --surface-2:   #FAFAF8;
-    --border:      #E4E2DC;
-    --border-mid:  #D0CEC7;
-    --border-dark: #B8B5AC;
-    --text-1:      #181714;
-    --text-2:      #5C5A54;
-    --text-3:      #9C9A94;
+    --surface-3:   #F2F1ED;
+    --border:      #E6E4DE;
+    --border-mid:  #D4D2CB;
+    --border-dark: #B9B7B0;
+    --text-1:      #18171A;
+    --text-2:      #57554F;
+    --text-3:      #9A9890;
+    --text-4:      #C4C2BA;
     --accent:      #18171A;
     --accent-fg:   #FFFFFF;
-    --danger:      #BE3027;
-    --success:     #19793E;
-    --panel-bg:    #15130E;
+    --danger:      #B92D22;
+    --danger-bg:   #FDF1F0;
+    --danger-border:#EAB8B4;
+    --success:     #176B35;
+    --success-bg:  #F0F9F4;
+    --success-border:#A8D9BB;
     --font:        'Geist', system-ui, sans-serif;
-    --radius:      6px;
+    --radius:      5px;
     --radius-md:   8px;
-    --shadow-xs:   0 1px 2px rgba(0,0,0,.05);
-    --h-header:    54px;
-    --w-sidebar:   200px;
-    --t:           0.15s ease;
+    --radius-lg:   12px;
+    --shadow-xs:   0 1px 2px rgba(0,0,0,.04), 0 1px 1px rgba(0,0,0,.03);
+    --shadow-sm:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --h-header:    52px;
+    --w-sidebar:   204px;
+    --t:           0.13s ease;
 }
 
 *, *::before, *::after {
@@ -36,6 +43,7 @@ body {
     color: var(--text-1);
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* ══════════════════════════════════════
@@ -48,8 +56,8 @@ body {
     box-shadow: var(--shadow-xs);
     display: flex;
     align-items: center;
-    padding: 0 20px;
-    gap: 16px;
+    padding: 0 18px;
+    gap: 14px;
     position: sticky;
     top: 0;
     z-index: 200;
@@ -60,13 +68,13 @@ body {
     align-items: center;
     flex-shrink: 0;
     text-decoration: none;
-    padding-right: 20px;
+    padding-right: 18px;
     border-right: 1px solid var(--border);
-    margin-right: 4px;
+    margin-right: 2px;
 }
 .c-header-logo img {
-    height: 24px;
-    opacity: 0.88;
+    height: 22px;
+    opacity: 0.85;
     transition: opacity var(--t);
 }
 .c-header-logo:hover img { opacity: 1; }
@@ -76,15 +84,15 @@ body {
     align-items: center;
     gap: 5px;
     font-size: 10px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase;
+    letter-spacing: 0.07em; text-transform: uppercase;
     color: var(--text-3);
-    background: var(--bg);
+    background: var(--surface-3);
     border: 1px solid var(--border);
-    padding: 3px 9px;
+    padding: 3px 8px;
     border-radius: 99px;
     flex-shrink: 0;
 }
-.c-header-badge i { font-size: 11px; }
+.c-header-badge i { font-size: 10px; }
 
 .c-header-spacer { flex: 1; }
 
@@ -93,16 +101,19 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 34px;
-    padding: 0 10px 0 6px;
+    height: 32px;
+    padding: 0 9px 0 5px;
     background: transparent;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--t);
     font-family: var(--font);
 }
-.c-account-btn:hover { background: var(--surface-2); }
+.c-account-btn:hover {
+    background: var(--surface-2);
+    border-color: var(--border-mid);
+}
 
 .c-account-avatar {
     width: 22px; height: 22px;
@@ -112,13 +123,14 @@ body {
     font-size: 9px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; user-select: none; overflow: hidden;
+    letter-spacing: 0.02em;
 }
 
 .c-account-name {
-    font-size: 12.5px; font-weight: 500;
+    font-size: 12px; font-weight: 500;
     color: var(--text-1);
     white-space: nowrap;
-    max-width: 160px;
+    max-width: 150px;
     overflow: hidden; text-overflow: ellipsis;
 }
 .c-account-sub {
@@ -126,13 +138,13 @@ body {
     color: var(--text-3);
     white-space: nowrap;
 }
-.c-account-info { display: flex; flex-direction: column; gap: 1px; }
+.c-account-info { display: flex; flex-direction: column; gap: 0px; }
 
 .c-account-caret {
     font-size: 11px;
-    color: var(--text-3);
+    color: var(--text-4);
     transition: transform var(--t);
-    margin-left: 2px;
+    margin-left: 1px;
 }
 .c-account-btn.open .c-account-caret { transform: rotate(180deg); }
 
@@ -141,11 +153,11 @@ body {
     display: none;
     position: absolute;
     top: calc(100% + 6px); right: 0;
-    min-width: 220px;
+    min-width: 210px;
     background: var(--surface);
     border: 1px solid var(--border-mid);
-    border-radius: var(--radius-md);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 24px rgba(0,0,0,.09), 0 2px 6px rgba(0,0,0,.05);
     z-index: 300;
     overflow: hidden;
 }
@@ -155,23 +167,23 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 14px;
+    padding: 9px 13px;
     cursor: pointer;
     transition: background var(--t);
     border-bottom: 1px solid var(--border);
 }
 .c-drop-item:last-of-type { border-bottom: none; }
 .c-drop-item:hover { background: var(--surface-2); }
-.c-drop-item.active { background: #F0FAF4; }
+.c-drop-item.active { background: var(--success-bg); }
 
 .c-drop-item-name {
-    font-size: 12.5px; font-weight: 500;
+    font-size: 12px; font-weight: 500;
     color: var(--text-1);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .c-drop-item-sub { font-size: 10.5px; color: var(--text-3); }
 
-.c-check { font-size: 13px; color: var(--success); opacity: 0; }
+.c-check { font-size: 12px; color: var(--success); opacity: 0; }
 .c-drop-item.active .c-check { opacity: 1; }
 
 .c-drop-divider { height: 1px; background: var(--border); }
@@ -180,9 +192,9 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 14px;
+    padding: 9px 13px;
     cursor: pointer;
-    font-size: 12.5px;
+    font-size: 12px; font-weight: 500;
     color: var(--danger);
     transition: background var(--t);
     width: 100%;
@@ -191,8 +203,8 @@ body {
     font-family: var(--font);
     text-align: left;
 }
-.c-drop-logout:hover { background: #FDF2F1; }
-.c-drop-logout i { font-size: 15px; }
+.c-drop-logout:hover { background: var(--danger-bg); }
+.c-drop-logout i { font-size: 14px; }
 
 /* ══════════════════════════════════════
    LAYOUT
@@ -212,8 +224,8 @@ body {
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    padding: 12px 8px;
-    gap: 2px;
+    padding: 10px 7px;
+    gap: 1px;
     position: sticky;
     top: var(--h-header);
     height: calc(100vh - var(--h-header));
@@ -223,24 +235,24 @@ body {
 }
 
 .c-nav-label {
-    font-size: 10px; font-weight: 700;
-    letter-spacing: 0.09em; text-transform: uppercase;
-    color: var(--text-3);
-    padding: 4px 10px 6px;
-    margin-top: 4px;
+    font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-4);
+    padding: 6px 10px 5px;
+    margin-top: 2px;
 }
 
 .c-nav-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 34px;
+    height: 33px;
     padding: 0 10px;
     border-radius: var(--radius);
     cursor: pointer;
     transition: all var(--t);
     color: var(--text-2);
-    font-size: 13px; font-weight: 500;
+    font-size: 12.5px; font-weight: 500;
     border: 1px solid transparent;
     background: none;
     width: 100%;
@@ -248,14 +260,24 @@ body {
     text-align: left;
     user-select: none;
 }
-.c-nav-item i { font-size: 16px; flex-shrink: 0; }
-.c-nav-item:hover { background: var(--surface-2); color: var(--text-1); border-color: var(--border); }
+.c-nav-item i {
+    font-size: 15px; flex-shrink: 0;
+    color: var(--text-3);
+    transition: color var(--t);
+}
+.c-nav-item:hover {
+    background: var(--surface-2);
+    color: var(--text-1);
+    border-color: var(--border);
+}
+.c-nav-item:hover i { color: var(--text-2); }
 .c-nav-item.active {
-    background: var(--bg);
+    background: var(--surface-3);
     color: var(--text-1);
     border-color: var(--border);
     font-weight: 600;
 }
+.c-nav-item.active i { color: var(--text-1); }
 
 /* ══════════════════════════════════════
    CONTEÚDO
@@ -263,7 +285,6 @@ body {
 .c-content {
     flex: 1;
     min-width: 0;
-    padding: 0;
     overflow-y: auto;
 }
 
@@ -275,44 +296,44 @@ body {
     justify-content: center;
     min-height: calc(100vh - var(--h-header) - 80px);
     text-align: center;
-    gap: 12px;
-    animation: fadeUp 0.22s ease both;
+    gap: 10px;
+    animation: fadeUp 0.2s ease both;
 }
 
 .c-placeholder-icon {
-    width: 56px; height: 56px;
-    border-radius: 14px;
+    width: 48px; height: 48px;
+    border-radius: 12px;
     background: var(--surface);
     border: 1px solid var(--border);
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px; color: var(--text-3);
-    margin-bottom: 6px;
+    font-size: 20px; color: var(--text-3);
+    margin-bottom: 4px;
 }
 
 .c-placeholder h2 {
-    font-size: 20px; font-weight: 600;
+    font-size: 17px; font-weight: 600;
     letter-spacing: -0.02em;
     color: var(--text-1);
 }
 
 .c-placeholder p {
-    font-size: 13.5px;
+    font-size: 13px;
     color: var(--text-3);
-    max-width: 320px;
-    line-height: 1.65;
+    max-width: 300px;
+    line-height: 1.6;
 }
 
 /* ══════════════════════════════════════
    UTILS
 ══════════════════════════════════════ */
 @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-dark); border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 99px; }
 
 /* ══════════════════════════════════════
    OVERLAY + FAB MOBILE
@@ -320,10 +341,10 @@ body {
 #mob-overlay {
     display: none;
     position: fixed; inset: 0;
-    background: rgba(15,13,10,.35);
-    backdrop-filter: blur(1px);
+    background: rgba(12,10,8,.32);
+    backdrop-filter: blur(2px);
     z-index: 499; opacity: 0; pointer-events: none;
-    transition: opacity .22s ease;
+    transition: opacity .2s ease;
 }
 #mob-overlay.open { opacity: 1; pointer-events: all; }
 
@@ -331,15 +352,15 @@ body {
     display: none;
     position: fixed; bottom: 20px; right: 16px; z-index: 400;
     align-items: center; gap: 7px;
-    height: 42px; padding: 0 16px;
+    height: 40px; padding: 0 16px;
     background: var(--accent); color: var(--accent-fg);
-    border: none; border-radius: 21px;
-    font-family: var(--font); font-size: 13px; font-weight: 600;
+    border: none; border-radius: 20px;
+    font-family: var(--font); font-size: 12.5px; font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0,0,0,.20);
+    box-shadow: 0 4px 14px rgba(0,0,0,.22);
     transition: all var(--t);
 }
-#btn-mob-menu i { font-size: 16px; }
+#btn-mob-menu i { font-size: 15px; }
 #btn-mob-menu:active { transform: scale(.96); }
 
 /* ══════════════════════════════════════
@@ -352,24 +373,24 @@ body {
         height: 100dvh;
         z-index: 500;
         transform: translateX(-100%);
-        transition: transform .24s cubic-bezier(.4,0,.2,1);
-        width: min(260px, 85vw);
-        padding-top: max(20px, env(safe-area-inset-top));
+        transition: transform .22s cubic-bezier(.4,0,.2,1);
+        width: min(250px, 84vw);
+        padding-top: max(18px, env(safe-area-inset-top));
     }
     .c-sidebar.open {
         transform: translateX(0);
-        box-shadow: 4px 0 24px rgba(0,0,0,.13);
+        box-shadow: 6px 0 28px rgba(0,0,0,.12);
     }
 
     #mob-overlay { display: block; }
     #btn-mob-menu { display: flex; }
 
-    .c-content { padding: 2px; }
-    .c-header { padding: 0 14px; }
-    .c-account-name { max-width: 110px; }
+    .c-content { padding: 0; }
+    .c-header { padding: 0 12px; }
+    .c-account-name { max-width: 100px; }
     .c-header-badge { display: none; }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
-    :root { --w-sidebar: 188px; }
+    :root { --w-sidebar: 186px; }
 }
