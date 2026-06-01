@@ -7,9 +7,9 @@
 
 const TYPE_ICON = {
     FEED:     'ph-image-square',
-    REELS:    'ph-film-strip',
+    REELS:    'ph-play',
     STORIES:  'ph-squares-four',
-    CAROUSEL: 'ph-images',
+    CAROUSEL: 'ph ph-fill ph-stack',
 };
 const TYPE_LABEL = {
     FEED: 'Feed', REELS: 'Reels', STORIES: 'Stories', CAROUSEL: 'Carrossel',
@@ -76,11 +76,25 @@ function abrirModal(postagem) {
         ? `<p class="ct-modal-caption">${_escapeHTML(postagem.captions)}</p>`
         : `<p class="ct-modal-caption-empty">Sem legenda cadastrada.</p>`;
 
-    // ── Data (aprovado_adm_em) ──────────────────────────────
-    const dataFmt = postagem.aprovado_adm_em
-        ? new Date(postagem.aprovado_adm_em).toLocaleDateString('pt-BR',
-            { day: '2-digit', month: 'short', year: 'numeric' })
-        : '—';
+    function tempoRelativo(dateStr) {
+    if (!dateStr) return '—';
+
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+
+    const p = (n, s) => {
+        if (s === 'mês') return `há ${n} ${n !== 1 ? 'meses' : 'mês'}`;
+        return `há ${n} ${s}${n !== 1 ? 's' : ''}`;
+    };
+
+    if (diff < 60)       return p(diff,                       'segundo');
+    if (diff < 3600)     return p(Math.floor(diff / 60),      'minuto');
+    if (diff < 86400)    return p(Math.floor(diff / 3600),    'hora');
+    if (diff < 2592000)  return p(Math.floor(diff / 86400),   'dia');
+    if (diff < 31536000) return p(Math.floor(diff / 2592000), 'mês');
+    return                      p(Math.floor(diff / 31536000),'ano');
+}
+
+const dataFmt = tempoRelativo(postagem.aprovado_adm_em);
 
     // ── Colaborador ──────────────────────────────────────────
     const colaboradorNome = postagem.colaboradores?.nome || '—';
@@ -171,7 +185,7 @@ function abrirModal(postagem) {
                                     <i class="ph ph-x-circle"></i> Recusar
                                 </button>
                                 <button class="ct-action-btn ct-action-btn--editar" data-acao="editar">
-                                    <i class="ph ph-pencil-simple"></i> Solicitar edição
+                                    <i class="ph ph-pencil-simple"></i> Editar
                                 </button>
                                 <button class="ct-action-btn ct-action-btn--download" data-acao="download">
                                     <i class="ph ph-download-simple"></i> Download
@@ -185,6 +199,36 @@ function abrirModal(postagem) {
         </div>`;
 
     document.body.appendChild(backdrop);
+
+    // 1. Em abrirModal(), logo após document.body.appendChild(backdrop):
+logVisualizacao(postagem);
+
+// 2. Substitua o listener dos botões de ação:
+backdrop.querySelectorAll('.ct-action-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const acao = btn.dataset.acao;
+
+        if (acao === 'aprovar') {
+    acaoAprovar(postagem, (postagemAtualizada) => {
+        fecharModal();
+
+        window._posts = (window._posts || []).filter(p => p.id !== postagemAtualizada.id);
+
+        const grid = document.getElementById('ct-grid');
+        if (grid) {
+            if (window._posts.length === 0) {
+                _setGridState('vazio');
+            } else {
+                renderGrid(grid, window._posts);
+            }
+        }
+    });
+} else {
+            console.log(`[conteudo] ação "${acao}" #${postagem.id}`);
+        }
+    });
+});
     document.body.style.overflow = 'hidden';
 
     // Inicializa carrossel após estar no DOM

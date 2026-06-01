@@ -4,7 +4,8 @@
    (sem filtro de status).
 ══════════════════════════════════════ */
 
-let _posts  = [];
+window._posts = [];
+let _posts = window._posts;
 let _elRaiz = null;
 
 async function render(el, conta) {
@@ -37,14 +38,16 @@ async function render(el, conta) {
                 colaboradores ( nome )
             `)
             .eq('id_cliente', conta.id)
-            .neq('type', 'STORIES')
-            .order('aprovado_adm_em', { ascending: true });
+.eq('status', 'EM_ANALISE_DO_CLIENTE')
+.neq('type', 'STORIES')
+.order('aprovado_adm_em', { ascending: true });
 
         if (error) throw error;
 
         console.log('[conteudo] posts carregados:', data?.length, data);
 
         _posts = data || [];
+window._posts = _posts;
 
         if (_posts.length === 0) {
             _setGridState('vazio');

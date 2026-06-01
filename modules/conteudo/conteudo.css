@@ -483,3 +483,94 @@
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+
+
+
+/* ══════════════════════════════════════
+   CONFIRM DIALOG
+══════════════════════════════════════ */
+.ct-confirm-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(10,9,8,.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    animation: ct-fade-in .14s ease both;
+}
+
+.ct-confirm-box {
+    background: var(--surface);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    width: 100%; max-width: 340px;
+    box-shadow: 0 16px 48px rgba(0,0,0,.22);
+    display: flex; flex-direction: column; gap: 10px;
+    animation: ct-modal-in .2s cubic-bezier(.22,1,.36,1) both;
+}
+
+.ct-confirm-titulo {
+    font-size: 14px; font-weight: 700;
+    color: var(--text-1); letter-spacing: -0.01em;
+}
+
+.ct-confirm-texto {
+    font-size: 12.5px; line-height: 1.65;
+    color: var(--text-2);
+}
+
+.ct-confirm-btns {
+    display: flex; gap: 8px; justify-content: flex-end;
+    margin-top: 6px;
+}
+
+.ct-confirm-btn {
+    height: 34px; padding: 0 16px;
+    font-family: var(--font); font-size: 12.5px; font-weight: 600;
+    border-radius: var(--radius-md); border: 1px solid var(--border-mid);
+    cursor: pointer; transition: all var(--t);
+}
+
+.ct-confirm-cancelar {
+    background: var(--surface-3); color: var(--text-2);
+}
+.ct-confirm-cancelar:hover { background: var(--surface-2); color: var(--text-1); }
+
+.ct-confirm-ok {
+    color: #fff;
+    filter: brightness(1);
+}
+.ct-confirm-ok:hover { filter: brightness(.88); }
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+.ct-toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 12.5px; font-weight: 600;
+    white-space: nowrap;
+    z-index: 1200;
+    opacity: 0;
+    transition: opacity .22s ease, transform .22s ease;
+    pointer-events: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+.ct-toast--sucesso {
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    color: var(--success);
+}
+.ct-toast--erro {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    color: var(--danger);
+}
+.ct-toast--show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
