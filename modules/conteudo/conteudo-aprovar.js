@@ -43,7 +43,6 @@ async function logVisualizacao(postagem) {
             ACAO:      'PORTAL - VISUALIZADO',
             ITEM:      'VISUALIZAÇÃO',
             QUEM:      _getNomeUsuario().toUpperCase(),
-            ALTERACAO: `Postagem #${postagem.id} (${postagem.title || '—'})`,
         };
 
         const logsAtualizados = [...logsAtuais, novaEntrada];

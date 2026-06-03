@@ -68,23 +68,49 @@ function acaoEditarLegenda(postagem, modalEl) {
         btnSalvar.textContent = 'Salvando…';
 
         try {
+            // 1. Busca logs atuais
+            const { logs: logsAtuais } = await _buscarLogs(postagem.id);
+
+            const agora = new Date().toISOString();
+            const quem  = _getNomeUsuario().toUpperCase();
+
+            // 2. Monta entrada de log no padrão {antigo} | {novo}
+            const legendaAntiga = postagem.captions
+                ? postagem.captions.substring(0, 80) + (postagem.captions.length > 80 ? '…' : '')
+                : '(sem legenda)';
+            const legendaNova = novaLegenda
+                ? novaLegenda.substring(0, 80) + (novaLegenda.length > 80 ? '…' : '')
+                : '(sem legenda)';
+
+            const novoLog = {
+                EM:        agora,
+                ACAO:      'PORTAL - LEGENDA EDITADA',
+                ITEM:      'LEGENDA',
+                QUEM:      quem,
+                ALTERACAO: `${legendaAntiga} | ${legendaNova}`,
+            };
+
+            const logsAtualizados = [...logsAtuais, novoLog];
+
+            // 3. Salva no banco (legenda + log)
             const { error } = await _db()
                 .from('postagens')
-                .update({ captions: novaLegenda })
+                .update({ captions: novaLegenda, logs: logsAtualizados })
                 .eq('id', postagem.id);
 
             if (error) throw error;
 
-            // Atualiza objeto local
+            // 4. Atualiza objeto local
             postagem.captions = novaLegenda;
+            postagem.logs     = logsAtualizados;
 
-            // Atualiza exibição
+            // 5. Atualiza exibição
             if (captionEl) {
                 if (novaLegenda) {
-                    captionEl.className  = 'ct-modal-caption';
+                    captionEl.className   = 'ct-modal-caption';
                     captionEl.textContent = novaLegenda;
                 } else {
-                    captionEl.className  = 'ct-modal-caption-empty';
+                    captionEl.className   = 'ct-modal-caption-empty';
                     captionEl.textContent = 'Sem legenda cadastrada.';
                 }
                 captionEl.style.display = '';
@@ -95,8 +121,8 @@ function acaoEditarLegenda(postagem, modalEl) {
 
         } catch (e) {
             console.error('[acoes] erro ao salvar legenda:', e);
-            btnSalvar.disabled    = false;
-            btnSalvar.innerHTML   = '<i class="ph ph-floppy-disk"></i> Salvar';
+            btnSalvar.disabled  = false;
+            btnSalvar.innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar';
             _toast('Erro ao salvar. Tente novamente.', 'erro');
         }
     });
@@ -104,8 +130,8 @@ function acaoEditarLegenda(postagem, modalEl) {
 
 // ── AÇÃO: Download de mídias ──────────────────────────────────
 /**
- * Baixa todas as mídias da postagem.
- * Compatível com Safari/iOS (fetch → blob → URL.createObjectURL).
+ * Dispara o download de cada mídia via Worker,
+ * que injeta Content-Disposition e permite barra de progresso nativa.
  * @param {Object} postagem
  */
 async function acaoDownload(postagem) {
@@ -127,9 +153,11 @@ async function acaoDownload(postagem) {
 
     if (!confirmou) return;
 
-    _toast('Preparando download…', 'sucesso');
+    _toast(`Iniciando download de ${plural}…`, 'sucesso');
 
-    let erros = 0;
+    let erros   = 0;
+    const agora = new Date().toISOString();
+    const quem  = _getNomeUsuario().toUpperCase();
 
     for (let i = 0; i < midias.length; i++) {
         const midia = midias[i];
@@ -137,20 +165,51 @@ async function acaoDownload(postagem) {
         if (!url) { erros++; continue; }
 
         try {
-            await _baixarArquivo(url, _nomeArquivo(postagem, midia, i));
-            // Pequeno delay entre arquivos para não sobrecarregar o Safari
-            if (i < midias.length - 1) await _sleep(400);
+            _dispararDownload(url, _nomeArquivo(postagem, midia, i));
+            // Delay entre arquivos para o navegador não sobrepor os downloads
+            if (i < midias.length - 1) await _sleep(600);
         } catch (e) {
-            console.warn('[download] falha ao baixar:', url, e);
+            console.warn('[download] falha ao disparar download:', url, e);
             erros++;
         }
     }
 
+    // ── Registra log de download ──────────────────────────────
+    try {
+        const { logs: logsAtuais } = await _buscarLogs(postagem.id);
+
+        const statusDownload = erros === 0
+            ? `${midias.length} arquivo(s) enviado(s) para download`
+            : `${midias.length - erros} arquivo(s) enviado(s), ${erros} com erro`;
+
+        const novoLog = {
+            EM:        agora,
+            ACAO:      'PORTAL - DOWNLOAD',
+            ITEM:      'MÍDIA',
+            QUEM:      quem,
+        };
+
+        const logsAtualizados = [...logsAtuais, novoLog];
+
+        const { error } = await _db()
+            .from('postagens')
+            .update({ logs: logsAtualizados })
+            .eq('id', postagem.id);
+
+        if (!error) {
+            postagem.logs = logsAtualizados;
+            console.log(`[download] log registrado — #${postagem.id}`);
+        }
+    } catch (logErr) {
+        console.warn('[download] erro ao registrar log:', logErr);
+    }
+
+    // ── Feedback final ────────────────────────────────────────
     if (erros === 0) {
         _toast(
             midias.length > 1
-                ? `${midias.length} arquivos baixados!`
-                : 'Download concluído!',
+                ? `${midias.length} downloads iniciados no navegador!`
+                : 'Download iniciado no navegador!',
             'sucesso'
         );
     } else {
@@ -158,26 +217,19 @@ async function acaoDownload(postagem) {
     }
 }
 
-// ── Baixa um único arquivo (fetch → blob) ─────────────────────
-async function _baixarArquivo(url, filename) {
-    // Fetch com mode: 'cors' para tentar evitar opaque response
-    const res = await fetch(url, { mode: 'cors', cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+// ── Dispara download via Worker (suporta cross-origin + barra de progresso) ───
+function _dispararDownload(url, filename) {
+    const WORKER_URL = 'https://dn02.andrewmssantos.workers.dev/download';
 
-    const blob     = await res.blob();
-    const blobURL  = URL.createObjectURL(blob);
+    const downloadUrl = `${WORKER_URL}?url=${encodeURIComponent(url)}&nome=${encodeURIComponent(filename)}`;
 
     const a = document.createElement('a');
-    a.href     = blobURL;
-    a.download = filename;
+    a.href          = downloadUrl;
+    a.download      = filename;
     a.style.display = 'none';
 
     document.body.appendChild(a);
     a.click();
-
-    // Aguarda um tick antes de revogar (necessário no Safari)
-    await _sleep(100);
-    URL.revokeObjectURL(blobURL);
     a.remove();
 }
 
