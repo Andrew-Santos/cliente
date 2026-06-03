@@ -1,0 +1,226 @@
+/* ══════════════════════════════════════
+   conteudo-acoes-extras.js
+   Ações: editar legenda + download de mídias
+══════════════════════════════════════ */
+
+// ── AÇÃO: Editar legenda ──────────────────────────────────────
+/**
+ * Transforma a seção de legenda do modal num inline editor.
+ * @param {Object} postagem
+ * @param {HTMLElement} modalEl — referência ao #ct-modal
+ */
+function acaoEditarLegenda(postagem, modalEl) {
+    // Evita abrir duas vezes
+    if (modalEl.querySelector('.ct-caption-editor')) return;
+
+    const secao = modalEl.querySelector('.ct-caption-section');
+    if (!secao) return;
+
+    const captionEl = secao.querySelector('.ct-modal-caption, .ct-modal-caption-empty');
+    if (captionEl) captionEl.style.display = 'none';
+
+    const textoAtual = postagem.captions || '';
+
+    const editorHTML = `
+        <div class="ct-caption-editor">
+            <textarea class="ct-caption-textarea" rows="6" maxlength="2200"
+                      placeholder="Escreva a legenda…">${_escapeHTMLAttr(textoAtual)}</textarea>
+            <div class="ct-caption-editor-footer">
+                <span class="ct-caption-counter">
+                    <span id="ct-caption-len">${textoAtual.length}</span> / 2200
+                </span>
+                <div class="ct-caption-editor-btns">
+                    <button class="ct-caption-btn ct-caption-btn--cancel">Cancelar</button>
+                    <button class="ct-caption-btn ct-caption-btn--save">
+                        <i class="ph ph-floppy-disk"></i> Salvar
+                    </button>
+                </div>
+            </div>
+        </div>`;
+
+    secao.insertAdjacentHTML('beforeend', editorHTML);
+
+    const editor   = secao.querySelector('.ct-caption-editor');
+    const textarea = editor.querySelector('.ct-caption-textarea');
+    const lenEl    = editor.querySelector('#ct-caption-len');
+
+    // Auto-foco no fim do texto
+    textarea.focus();
+    textarea.setSelectionRange(textoAtual.length, textoAtual.length);
+
+    // Contador de caracteres
+    textarea.addEventListener('input', () => {
+        lenEl.textContent = textarea.value.length;
+    });
+
+    // ── Cancelar ─────────────────────────────────────────────
+    editor.querySelector('.ct-caption-btn--cancel').addEventListener('click', () => {
+        editor.remove();
+        if (captionEl) captionEl.style.display = '';
+    });
+
+    // ── Salvar ────────────────────────────────────────────────
+    editor.querySelector('.ct-caption-btn--save').addEventListener('click', async () => {
+        const novaLegenda = textarea.value.trim();
+        const btnSalvar   = editor.querySelector('.ct-caption-btn--save');
+
+        btnSalvar.disabled    = true;
+        btnSalvar.textContent = 'Salvando…';
+
+        try {
+            const { error } = await _db()
+                .from('postagens')
+                .update({ captions: novaLegenda })
+                .eq('id', postagem.id);
+
+            if (error) throw error;
+
+            // Atualiza objeto local
+            postagem.captions = novaLegenda;
+
+            // Atualiza exibição
+            if (captionEl) {
+                if (novaLegenda) {
+                    captionEl.className  = 'ct-modal-caption';
+                    captionEl.textContent = novaLegenda;
+                } else {
+                    captionEl.className  = 'ct-modal-caption-empty';
+                    captionEl.textContent = 'Sem legenda cadastrada.';
+                }
+                captionEl.style.display = '';
+            }
+
+            editor.remove();
+            _toast('Legenda salva com sucesso!', 'sucesso');
+
+        } catch (e) {
+            console.error('[acoes] erro ao salvar legenda:', e);
+            btnSalvar.disabled    = false;
+            btnSalvar.innerHTML   = '<i class="ph ph-floppy-disk"></i> Salvar';
+            _toast('Erro ao salvar. Tente novamente.', 'erro');
+        }
+    });
+}
+
+// ── AÇÃO: Download de mídias ──────────────────────────────────
+/**
+ * Baixa todas as mídias da postagem.
+ * Compatível com Safari/iOS (fetch → blob → URL.createObjectURL).
+ * @param {Object} postagem
+ */
+async function acaoDownload(postagem) {
+    const midias = _parseMidiasDownload(postagem.media);
+
+    if (midias.length === 0) {
+        _toast('Nenhuma mídia disponível para download.', 'erro');
+        return;
+    }
+
+    const plural = midias.length > 1 ? `${midias.length} arquivos` : '1 arquivo';
+
+    const confirmou = await _confirmar({
+        titulo: 'Baixar mídias?',
+        texto:  `Você está prestes a baixar <strong>${plural}</strong> da postagem <strong>#${postagem.id}</strong>.`,
+        btnOk:  'Baixar',
+        corBtn: 'var(--accent)',
+    });
+
+    if (!confirmou) return;
+
+    _toast('Preparando download…', 'sucesso');
+
+    let erros = 0;
+
+    for (let i = 0; i < midias.length; i++) {
+        const midia = midias[i];
+        const url   = midia.url_media;
+        if (!url) { erros++; continue; }
+
+        try {
+            await _baixarArquivo(url, _nomeArquivo(postagem, midia, i));
+            // Pequeno delay entre arquivos para não sobrecarregar o Safari
+            if (i < midias.length - 1) await _sleep(400);
+        } catch (e) {
+            console.warn('[download] falha ao baixar:', url, e);
+            erros++;
+        }
+    }
+
+    if (erros === 0) {
+        _toast(
+            midias.length > 1
+                ? `${midias.length} arquivos baixados!`
+                : 'Download concluído!',
+            'sucesso'
+        );
+    } else {
+        _toast(`Download concluído com ${erros} erro(s).`, 'erro');
+    }
+}
+
+// ── Baixa um único arquivo (fetch → blob) ─────────────────────
+async function _baixarArquivo(url, filename) {
+    // Fetch com mode: 'cors' para tentar evitar opaque response
+    const res = await fetch(url, { mode: 'cors', cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const blob     = await res.blob();
+    const blobURL  = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href     = blobURL;
+    a.download = filename;
+    a.style.display = 'none';
+
+    document.body.appendChild(a);
+    a.click();
+
+    // Aguarda um tick antes de revogar (necessário no Safari)
+    await _sleep(100);
+    URL.revokeObjectURL(blobURL);
+    a.remove();
+}
+
+// ── Gera nome de arquivo legível ──────────────────────────────
+function _nomeArquivo(postagem, midia, index) {
+    const base = (postagem.title || `postagem-${postagem.id}`)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/gi, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 40);
+
+    const ext = _extencaoDeURL(midia.url_media, midia.type);
+    const seq  = midia.sequencia || (index + 1);
+
+    return `${base}-${seq}.${ext}`;
+}
+
+function _extencaoDeURL(url, type) {
+    try {
+        const path = new URL(url).pathname;
+        const ext  = path.split('.').pop().toLowerCase().split('?')[0];
+        if (ext && ext.length <= 4) return ext;
+    } catch (_) { /* ignora */ }
+    return type === 'video' ? 'mp4' : 'jpg';
+}
+
+function _parseMidiasDownload(media) {
+    try {
+        const arr = typeof media === 'string' ? JSON.parse(media) : (media || []);
+        return arr.slice().sort((a, b) =>
+            parseInt(a.sequencia || '0', 10) - parseInt(b.sequencia || '0', 10)
+        );
+    } catch { return []; }
+}
+
+function _sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+// Escapa para uso dentro de atributos HTML (textarea value via innerHTML)
+function _escapeHTMLAttr(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}

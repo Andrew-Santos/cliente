@@ -1,8 +1,10 @@
 /* ══════════════════════════════════════
-   conteudo-modal.js  v3
+   conteudo-modal.js  v4
    Layout desktop: mídia (esq) + painel (dir)
    Layout mobile: empilhado (coluna única)
-   Depende de: conteudo-carousel.js
+   Depende de: conteudo-carousel.js,
+               conteudo-aprovar.js,
+               conteudo-acoes-extras.js
 ══════════════════════════════════════ */
 
 const TYPE_ICON = {
@@ -76,25 +78,23 @@ function abrirModal(postagem) {
         ? `<p class="ct-modal-caption">${_escapeHTML(postagem.captions)}</p>`
         : `<p class="ct-modal-caption-empty">Sem legenda cadastrada.</p>`;
 
+    // ── Tempo relativo ───────────────────────────────────────
     function tempoRelativo(dateStr) {
-    if (!dateStr) return '—';
+        if (!dateStr) return '—';
+        const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+        const p = (n, s) => {
+            if (s === 'mês') return `há ${n} ${n !== 1 ? 'meses' : 'mês'}`;
+            return `há ${n} ${s}${n !== 1 ? 's' : ''}`;
+        };
+        if (diff < 60)       return p(diff,                       'segundo');
+        if (diff < 3600)     return p(Math.floor(diff / 60),      'minuto');
+        if (diff < 86400)    return p(Math.floor(diff / 3600),    'hora');
+        if (diff < 2592000)  return p(Math.floor(diff / 86400),   'dia');
+        if (diff < 31536000) return p(Math.floor(diff / 2592000), 'mês');
+        return                      p(Math.floor(diff / 31536000),'ano');
+    }
 
-    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-
-    const p = (n, s) => {
-        if (s === 'mês') return `há ${n} ${n !== 1 ? 'meses' : 'mês'}`;
-        return `há ${n} ${s}${n !== 1 ? 's' : ''}`;
-    };
-
-    if (diff < 60)       return p(diff,                       'segundo');
-    if (diff < 3600)     return p(Math.floor(diff / 60),      'minuto');
-    if (diff < 86400)    return p(Math.floor(diff / 3600),    'hora');
-    if (diff < 2592000)  return p(Math.floor(diff / 86400),   'dia');
-    if (diff < 31536000) return p(Math.floor(diff / 2592000), 'mês');
-    return                      p(Math.floor(diff / 31536000),'ano');
-}
-
-const dataFmt = tempoRelativo(postagem.aprovado_adm_em);
+    const dataFmt = tempoRelativo(postagem.aprovado_adm_em);
 
     // ── Colaborador ──────────────────────────────────────────
     const colaboradorNome = postagem.colaboradores?.nome || '—';
@@ -143,8 +143,8 @@ const dataFmt = tempoRelativo(postagem.aprovado_adm_em);
                             </span>
                         </div>
 
-                        <!-- Legenda -->
-                        <div class="ct-modal-section">
+                        <!-- Legenda — classe ct-caption-section para o editor inline -->
+                        <div class="ct-modal-section ct-caption-section">
                             <p class="ct-modal-section-label">Legenda</p>
                             ${captionHTML}
                         </div>
@@ -200,38 +200,45 @@ const dataFmt = tempoRelativo(postagem.aprovado_adm_em);
 
     document.body.appendChild(backdrop);
 
-    // 1. Em abrirModal(), logo após document.body.appendChild(backdrop):
-logVisualizacao(postagem);
+    // ── Log de visualização ──────────────────────────────────
+    logVisualizacao(postagem);
 
-// 2. Substitua o listener dos botões de ação:
-backdrop.querySelectorAll('.ct-action-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-        e.stopPropagation();
-        const acao = btn.dataset.acao;
+    // ── Listeners dos botões de ação ─────────────────────────
+    backdrop.querySelectorAll('.ct-action-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const acao    = btn.dataset.acao;
+            const modalEl = document.getElementById('ct-modal');
 
-        if (acao === 'aprovar') {
-    acaoAprovar(postagem, (postagemAtualizada) => {
-        fecharModal();
+            if (acao === 'aprovar') {
+                acaoAprovar(postagem, (postagemAtualizada) => {
+                    fecharModal();
+                    window._posts = (window._posts || []).filter(p => p.id !== postagemAtualizada.id);
+                    const grid = document.getElementById('ct-grid');
+                    if (grid) {
+                        if (window._posts.length === 0) {
+                            _setGridState('vazio');
+                        } else {
+                            renderGrid(grid, window._posts);
+                        }
+                    }
+                });
 
-        window._posts = (window._posts || []).filter(p => p.id !== postagemAtualizada.id);
+            } else if (acao === 'editar') {
+                acaoEditarLegenda(postagem, modalEl);
 
-        const grid = document.getElementById('ct-grid');
-        if (grid) {
-            if (window._posts.length === 0) {
-                _setGridState('vazio');
+            } else if (acao === 'download') {
+                acaoDownload(postagem);
+
             } else {
-                renderGrid(grid, window._posts);
+                console.log(`[conteudo] ação "${acao}" #${postagem.id}`);
             }
-        }
+        });
     });
-} else {
-            console.log(`[conteudo] ação "${acao}" #${postagem.id}`);
-        }
-    });
-});
+
     document.body.style.overflow = 'hidden';
 
-    // Inicializa carrossel após estar no DOM
+    // ── Inicializa carrossel após estar no DOM ───────────────
     if (isCarousel && midias.length > 0) {
         const carouselEl = backdrop.querySelector('.ct-carousel');
         if (carouselEl) {
@@ -239,6 +246,7 @@ backdrop.querySelectorAll('.ct-action-btn').forEach(btn => {
         }
     }
 
+    // ── Fechar ───────────────────────────────────────────────
     backdrop.querySelector('#ct-modal-close').addEventListener('click', fecharModal);
     const floatClose = backdrop.querySelector('#ct-modal-close-float');
     if (floatClose) floatClose.addEventListener('click', fecharModal);
@@ -246,13 +254,6 @@ backdrop.querySelectorAll('.ct-action-btn').forEach(btn => {
 
     _escListener = e => { if (e.key === 'Escape') fecharModal(); };
     document.addEventListener('keydown', _escListener);
-
-    backdrop.querySelectorAll('.ct-action-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            console.log(`[conteudo] ação "${btn.dataset.acao}" #${postagem.id}`);
-        });
-    });
 }
 
 let _escListener = null;
