@@ -19,6 +19,9 @@
 
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="modules/conteudo/conteudo.css">
+    <link rel="stylesheet" href="modules/agendamento/agendamento.css">
+    <link rel="stylesheet" href="modules/drive/drive.css">
+    <link rel="stylesheet" href="modules/planejamento/planejamento.css">
 
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -229,13 +232,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
-<!-- Módulos — carregados APÓS o script principal -->
+<!-- Módulos conteúdo -->
 <script src="modules/conteudo/conteudo-carousel.js"></script>
 <script src="modules/conteudo/conteudo-modal.js"></script>
 <script src="modules/conteudo/conteudo-grid.js"></script>
 <script src="modules/conteudo/conteudo.js"></script>
 <script src="modules/conteudo/conteudo-aprovar.js"></script>
 <script src="modules/conteudo/conteudo-acoes-extras.js"></script>
+<script src="modules/conteudo/conteudo-recusar.js"></script>
+
+<!-- Módulos agendamento -->
+<script src="modules/agendamento/agendamento-grid.js"></script>
+<script src="modules/agendamento/agendamento-modal.js"></script>
+<script src="modules/agendamento/agendamento.js"></script>
+
+<!-- Módulos drive -->
+<script src="modules/drive/drive-grid.js"></script>
+<script src="modules/drive/drive-modal.js"></script>
+<script src="modules/drive/drive.js"></script>
+
+<!-- Após os scripts do módulo conteudo, adicione: -->
+<script src="modules/planejamento/planejamento.js"></script>
+<script src="modules/planejamento/planejamento-modal.js"></script>
 
 <!-- MODULOS precisa de render() já definido, então fica por último -->
 <script>
@@ -246,15 +264,15 @@ const MODULOS = [
     },
     {
         id: 'agendamentos', label: 'Agendamentos', icon: 'ph-calendar-check',
-        render(el, conta) { _placeholder(el, 'ph-calendar-check', 'Agendamentos', 'Visualize e acompanhe os agendamentos de publicação.'); }
+        render(el, conta) { renderAgendamento(el, conta); }
     },
     {
         id: 'planejamento', label: 'Planejamento', icon: 'ph-kanban',
-        render(el, conta) { _placeholder(el, 'ph-kanban', 'Planejamento', 'Acompanhe o planejamento estratégico da sua presença digital.'); }
+        render(el, conta) { renderPlanejamento(el, conta); }
     },
     {
         id: 'drive', label: 'Drive', icon: 'ph-folder-open',
-        render(el, conta) { _placeholder(el, 'ph-folder-open', 'Drive', 'Acesse os arquivos e materiais produzidos para você.'); }
+        render(el, conta) { renderDrive(el, conta); }
     },
 ];
 </script>
