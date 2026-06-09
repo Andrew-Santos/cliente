@@ -91,6 +91,13 @@ function _recusarInjetarCSS() {
     align-self: flex-end; white-space: nowrap;
 }
 
+/* ── Nome do remetente ── */
+.ct-rec-msg-user {
+    font-size: 9.5px; font-weight: 700;
+    color: rgba(255,255,255,.60);
+    letter-spacing: .03em; margin-bottom: 1px;
+}
+
 /* Player de áudio no balão */
 .ct-rec-ap {
     display: flex; align-items: center; gap: 8px; min-width: 180px;
@@ -230,9 +237,31 @@ function _recusarInjetarCSS() {
 .ct-recusar-btn-confirmar:hover { background: #FAE2E0; border-color: #D8978F; }
 .ct-recusar-btn-confirmar:disabled { opacity: .45; cursor: not-allowed; }
 
+/* ══════════════════════════════════════
+   MOBILE — tela cheia, centralizado
+══════════════════════════════════════ */
 @media (max-width: 480px) {
-    .ct-recusar-backdrop { padding: 0; align-items: flex-end; }
-    .ct-recusar-win { max-width: 100%; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+    /* Backdrop: centralizado e com padding zero */
+    .ct-recusar-backdrop {
+        padding: 0;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Janela ocupa tela cheia */
+    .ct-recusar-win {
+        width: 100%;
+        max-width: 100%;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+    }
+
+    /* Lista cresce para preencher o espaço disponível */
+    .ct-recusar-lista {
+        max-height: none;
+        flex: 1;
+    }
 }
     `;
     document.head.appendChild(s);
@@ -448,6 +477,7 @@ function _recInitPlayers(container) {
 }
 
 // ── Renderiza lista de mensagens da recusa ────────────────────────────────────
+// Aceita tanto mensagens históricas (banco) quanto locais (sessão atual)
 function _recRenderLista(mensagens, listaEl) {
     if (!mensagens.length) {
         listaEl.innerHTML = `
@@ -459,13 +489,29 @@ function _recRenderLista(mensagens, listaEl) {
     }
 
     listaEl.innerHTML = mensagens.map(m => {
-        const hora = new Date(m.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        // Suporta tanto created_at (banco) quanto em (local)
+        const ts   = m.created_at || m.em || null;
+        const hora = ts
+            ? new Date(ts).toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit',
+                hour: '2-digit', minute: '2-digit',
+              })
+            : '';
 
-        if (m.tipo === 'audio') {
+        // Nome do remetente (banco usa user_name, local não tem)
+        const nomeRem = m.user_name || '';
+        const nomeHTML = nomeRem
+            ? `<span class="ct-rec-msg-user">${_recEsc(nomeRem)}</span>`
+            : '';
+
+        if (m.type === 'audio' || m.tipo === 'audio') {
+            // url vem de m.url (banco) ou m.url (local após upload)
+            const audioUrl = m.url || '';
             return `
                 <div class="ct-rec-msg-row">
                     <div class="ct-rec-msg-bubble">
-                        <div class="ct-rec-ap" data-src="${m.url}" data-init="">
+                        ${nomeHTML}
+                        <div class="ct-rec-ap" data-src="${_recEsc(audioUrl)}" data-init="">
                             <button class="ct-rec-ap-play"><i class="ph ph-play"></i></button>
                             <div class="ct-rec-ap-wave">${_recBarrasHTML(28)}</div>
                             <span class="ct-rec-ap-time">–:––</span>
@@ -475,10 +521,13 @@ function _recRenderLista(mensagens, listaEl) {
                 </div>`;
         }
 
+        // Texto: banco usa message, local usa texto
+        const texto = m.message || m.texto || '';
         return `
             <div class="ct-rec-msg-row">
                 <div class="ct-rec-msg-bubble">
-                    <div>${_recEsc(m.texto).replace(/\n/g, '<br>')}</div>
+                    ${nomeHTML}
+                    <div>${_recEsc(texto).replace(/\n/g, '<br>')}</div>
                     <span class="ct-rec-msg-time">${hora}</span>
                 </div>
             </div>`;
@@ -498,8 +547,18 @@ function _recEsc(v) {
 async function acaoRecusar(postagem, onSucesso) {
     _recusarInjetarCSS();
 
-    // Mensagens coletadas nesta sessão de recusa (ainda não salvas no banco)
+    // ── Carrega mensagens existentes do objeto postagem ───────────────────────
+    // Mescla histórico do banco com novas mensagens da sessão
+    const mensagensHistorico = Array.isArray(postagem.mensagens)
+        ? postagem.mensagens
+        : [];
+
+    // Novas mensagens adicionadas nesta sessão de recusa (ainda não salvas)
     const mensagensLocais = [];
+
+    // Lista combinada para exibição (histórico + novas)
+    const _todasMensagens = () => [...mensagensHistorico, ...mensagensLocais];
+
     const st = _recAudioInit();
 
     const backdrop = document.createElement('div');
@@ -524,12 +583,7 @@ async function acaoRecusar(postagem, onSucesso) {
             </div>
 
             <!-- Lista de mensagens -->
-            <div class="ct-recusar-lista" id="ct-recusar-lista">
-                <div class="ct-recusar-empty">
-                    <i class="ph ph-chat-dots"></i>
-                    <span>Adicione um motivo antes de confirmar.</span>
-                </div>
-            </div>
+            <div class="ct-recusar-lista" id="ct-recusar-lista"></div>
 
             <!-- Compose -->
             <div class="ct-recusar-compose">
@@ -568,6 +622,9 @@ async function acaoRecusar(postagem, onSucesso) {
     const areaEl   = document.getElementById('ct-rec-audio-area');
     const confBtn  = document.getElementById('ct-recusar-confirmar');
 
+    // ── Renderiza histórico imediatamente ─────────────────────────────────────
+    _recRenderLista(_todasMensagens(), listaEl);
+
     // ── Auto-resize textarea ──────────────────────────────────────────────────
     txtEl.addEventListener('input', () => {
         txtEl.style.height = 'auto';
@@ -589,7 +646,7 @@ async function acaoRecusar(postagem, onSucesso) {
         mensagensLocais.push({ tipo: 'texto', texto, em: new Date().toISOString() });
         txtEl.value = '';
         txtEl.style.height = 'auto';
-        _recRenderLista(mensagensLocais, listaEl);
+        _recRenderLista(_todasMensagens(), listaEl);
     };
 
     // ── Enviar áudio ──────────────────────────────────────────────────────────
@@ -601,7 +658,7 @@ async function acaoRecusar(postagem, onSucesso) {
             const url = await _recUploadAudio(st.blob);
             mensagensLocais.push({ tipo: 'audio', url, em: new Date().toISOString() });
             _recCancelarAudio(st, areaEl, micBtn);
-            _recRenderLista(mensagensLocais, listaEl);
+            _recRenderLista(_todasMensagens(), listaEl);
         } catch (e) {
             console.error('[recusar] erro upload áudio:', e);
             _toast('Erro ao enviar áudio. Tente novamente.', 'erro');
@@ -673,7 +730,7 @@ async function acaoRecusar(postagem, onSucesso) {
                 ? dadosAtuais.mensagens
                 : [];
 
-            // Formata mensagens locais no padrão do banco
+            // Formata mensagens locais (novas desta sessão) no padrão do banco
             const novasMensagens = mensagensLocais.map(m => ({
                 user_name:  quem,
                 created_at: m.em,

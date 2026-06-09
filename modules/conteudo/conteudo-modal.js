@@ -1,10 +1,11 @@
 /* ══════════════════════════════════════
-   conteudo-modal.js  v4
+   conteudo-modal.js  v5
    Layout desktop: mídia (esq) + painel (dir)
    Layout mobile: empilhado (coluna única)
    Depende de: conteudo-carousel.js,
                conteudo-aprovar.js,
-               conteudo-acoes-extras.js
+               conteudo-acoes-extras.js,
+               conteudo-recusar.js
 ══════════════════════════════════════ */
 
 const TYPE_ICON = {
@@ -203,6 +204,20 @@ function abrirModal(postagem) {
     // ── Log de visualização ──────────────────────────────────
     logVisualizacao(postagem);
 
+    // ── Callback compartilhado: remove post do grid após ação ────────────────
+    function _onPostagemAlterada(postagemAtualizada) {
+        fecharModal();
+        window._posts = (window._posts || []).filter(p => p.id !== postagemAtualizada.id);
+        const grid = document.getElementById('ct-grid');
+        if (grid) {
+            if (window._posts.length === 0) {
+                _setGridState('vazio');
+            } else {
+                renderGrid(grid, window._posts);
+            }
+        }
+    }
+
     // ── Listeners dos botões de ação ─────────────────────────
     backdrop.querySelectorAll('.ct-action-btn').forEach(btn => {
         btn.addEventListener('click', e => {
@@ -211,27 +226,17 @@ function abrirModal(postagem) {
             const modalEl = document.getElementById('ct-modal');
 
             if (acao === 'aprovar') {
-                acaoAprovar(postagem, (postagemAtualizada) => {
-                    fecharModal();
-                    window._posts = (window._posts || []).filter(p => p.id !== postagemAtualizada.id);
-                    const grid = document.getElementById('ct-grid');
-                    if (grid) {
-                        if (window._posts.length === 0) {
-                            _setGridState('vazio');
-                        } else {
-                            renderGrid(grid, window._posts);
-                        }
-                    }
-                });
+                acaoAprovar(postagem, _onPostagemAlterada);
+
+            } else if (acao === 'recusar') {
+                // Abre janela de recusa; ao confirmar, remove do grid
+                acaoRecusar(postagem, _onPostagemAlterada);
 
             } else if (acao === 'editar') {
                 acaoEditarLegenda(postagem, modalEl);
 
             } else if (acao === 'download') {
                 acaoDownload(postagem);
-
-            } else {
-                console.log(`[conteudo] ação "${acao}" #${postagem.id}`);
             }
         });
     });
