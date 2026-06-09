@@ -1,0 +1,203 @@
+/* ══════════════════════════════════════
+   MÓDULO — DRIVE
+   Complementa conteudo.css e index.css.
+   Reutiliza: .ct-card, .ct-modal-*,
+   .ct-loading, .ct-empty, .ct-toast,
+   .ct-spin
+══════════════════════════════════════ */
+
+/* ══════════════════════════════════════
+   CABEÇALHO DE DATA
+══════════════════════════════════════ */
+.drive-date-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 18px 14px 8px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 2px;
+}
+
+.drive-date-label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-1);
+    letter-spacing: -0.01em;
+}
+
+.drive-date-count {
+    font-size: 11px;
+    color: var(--text-4);
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════
+   GRID DE ARQUIVOS
+══════════════════════════════════════ */
+.drive-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-bottom: 2px;
+    animation: fadeUp .18s ease both;
+}
+
+/* ── Card ── */
+.drive-card {
+    position: relative;
+    aspect-ratio: 1 / 1;   /* quadrado — padrão galeria */
+    background: var(--surface-3);
+    overflow: hidden;
+    cursor: pointer;
+    outline: none;
+}
+
+.drive-card:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.drive-card:active { opacity: .92; }
+
+.drive-card-thumb {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transition: transform .35s ease;
+}
+.drive-card:hover .drive-card-thumb { transform: scale(1.04); }
+
+.drive-card-no-media {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface-2); color: var(--text-4); font-size: 28px;
+}
+
+/* ══════════════════════════════════════
+   PAGINAÇÃO
+══════════════════════════════════════ */
+.drive-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 20px 14px 28px;
+}
+
+.drive-pag-btn {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius);
+    color: var(--text-2); font-size: 14px;
+    cursor: pointer;
+    transition: all var(--t);
+    flex-shrink: 0;
+}
+.drive-pag-btn:hover:not(:disabled) {
+    background: var(--surface-2);
+    border-color: var(--border-dark);
+    color: var(--text-1);
+}
+.drive-pag-btn:disabled {
+    opacity: .32;
+    cursor: not-allowed;
+}
+
+.drive-pag-nums {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.drive-pag-num {
+    min-width: 32px; height: 32px;
+    padding: 0 6px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--font);
+    font-size: 12px; font-weight: 500;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all var(--t);
+}
+.drive-pag-num:hover {
+    background: var(--surface-2);
+    border-color: var(--border-mid);
+    color: var(--text-1);
+}
+.drive-pag-num.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-fg);
+    font-weight: 700;
+    cursor: default;
+}
+
+.drive-pag-ellipsis {
+    min-width: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-4);
+    user-select: none;
+}
+
+/* ══════════════════════════════════════
+   ESTADO VAZIO / LOADING
+   (usa .ct-loading e .ct-empty do conteudo.css)
+   — só âncora o min-height no wrap do drive
+══════════════════════════════════════ */
+#drive-wrap > .ct-loading,
+#drive-wrap > .ct-empty {
+    min-height: calc(100vh - var(--h-header) - 80px);
+}
+
+/* ══════════════════════════════════════
+   RESPONSIVO
+══════════════════════════════════════ */
+@media (max-width: 640px) {
+    .drive-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+    }
+
+    .drive-date-header {
+        padding: 14px 10px 6px;
+    }
+
+    .drive-date-label {
+        font-size: 11.5px;
+    }
+
+    .drive-pagination {
+        padding: 16px 10px 24px;
+        gap: 4px;
+    }
+
+    .drive-pag-btn,
+    .drive-pag-num {
+        width: 28px; height: 28px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 380px) {
+    .drive-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .drive-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 1200px) {
+    .drive-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
