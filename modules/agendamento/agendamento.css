@@ -43,3 +43,46 @@ CM/* ═════════════════════════
     color: var(--text-3);
     flex-shrink: 0;
 }
+
+
+/* ── Data de agendamento no card (só status AGENDADO) ────────── */
+.ag-card-data-agendamento {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-variant-numeric: tabular-nums;
+}
+
+.ag-card-data-agendamento i {
+    font-size: 11px;
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .ag-card-data-agendamento {
+        font-size: 8.5px;
+        padding: 4px 6px;
+        gap: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ag-card-data-agendamento i {
+        font-size: 9px;
+    }
+}

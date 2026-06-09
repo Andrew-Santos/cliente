@@ -10,6 +10,13 @@ const AG_TYPE_BADGE_ICON = {
     STORIES:  'ph-fill ph-squares-four',
 };
 
+// Status AGENDADO removido — substituído pela data no card
+const AG_STATUS_CARD = {
+    APROVADO:    { label: 'Aprovado',    cls: 'aprovado'    },
+    FALHOU:      { label: 'Falhou',      cls: 'falhou'      },
+    PROCESSANDO: { label: 'Processando', cls: 'processando' },
+};
+
 function agRenderGrid(gridEl, posts) {
     gridEl.innerHTML = '';
     posts.forEach(post => {
@@ -82,17 +89,27 @@ function _agBuildCard(post) {
            </div>`
         : '';
 
-    card.innerHTML = thumbHTML + overlayHTML + typeBadgeHTML + statusBadgeHTML;
+    // ── Data de agendamento (só quando AGENDADO) ───────────────
+    let agDataHTML = '';
+    if (post.status === 'AGENDADO' && post.data_agendamento) {
+        try {
+            const dataFormatada = new Date(post.data_agendamento).toLocaleString('pt-BR', {
+                day:    '2-digit',
+                month:  '2-digit',
+                year:   'numeric',
+                hour:   '2-digit',
+                minute: '2-digit',
+            });
+            agDataHTML = `
+                <div class="ag-card-data-agendamento">
+                    <i class="ph ph-calendar-check"></i>${dataFormatada}
+                </div>`;
+        } catch { /* ignora */ }
+    }
+
+    card.innerHTML = thumbHTML + overlayHTML + typeBadgeHTML + statusBadgeHTML + agDataHTML;
     return card;
 }
-
-// Status visíveis no card (badge na parte inferior)
-const AG_STATUS_CARD = {
-    APROVADO:    { label: 'Aprovado',    cls: 'aprovado'    },
-    AGENDADO:    { label: 'Agendado',    cls: 'agendado'    },
-    FALHOU:      { label: 'Falhou',      cls: 'falhou'      },
-    PROCESSANDO: { label: 'Processando', cls: 'processando' },
-};
 
 function _agParseMidias(media) {
     try {
