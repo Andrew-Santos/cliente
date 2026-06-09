@@ -1,0 +1,45 @@
+CM/* ══════════════════════════════════════
+   MÓDULO — AGENDAMENTOS
+   Complementa conteudo.css (reutiliza
+   .ct-card, .ct-modal-*, .ct-grid etc.)
+══════════════════════════════════════ */
+
+/* ── Badge de status no card ─────────────────────────────────── */
+.ag-card-status {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 5px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: center;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.ag-card-status--aprovado {
+    color: #fff
+}
+.ag-card-status--agendado {
+    color: #fff;
+}
+.ag-card-status--falhou {
+    color: #fff;
+}
+.ag-card-status--processando {
+    color: rgba(255,255,255,.85);
+}
+
+/* ── Data de agendamento no painel ───────────────────────────── */
+.ag-data-agendamento {
+    gap: 5px;
+    font-variant-numeric: tabular-nums;
+}
+.ag-data-agendamento i {
+    font-size: 13px;
+    color: var(--text-3);
+    flex-shrink: 0;
+}
