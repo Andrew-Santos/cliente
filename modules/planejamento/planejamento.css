@@ -1,9 +1,7 @@
-/* ══════════════════════════════════════
-   MÓDULO — PLANEJAMENTO
-   Complementa conteudo.css e index.css.
-   Tabela de itens em planejamento +
-   modal de edição.
-══════════════════════════════════════ */
+#pl-wrap {
+    background: var(--bg);
+    min-height: calc(100vh - var(--h-header));
+}
 
 /* ══════════════════════════════════════
    CABEÇALHO DO MÓDULO
@@ -13,45 +11,50 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 20px 20px 14px;
-    border-bottom: 1px solid var(--border);
+    padding: 24px 24px 18px;
 }
 
 .pl-header-title {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--text-1);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
 }
 
 .pl-header-count {
     font-size: 11px;
     color: var(--text-4);
     font-weight: 500;
-    background: var(--surface-3);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 99px;
-    padding: 2px 9px;
+    padding: 3px 10px;
 }
 
 /* ══════════════════════════════════════
-   TABELA
+   TABELA — DESKTOP
 ══════════════════════════════════════ */
 .pl-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 14px 0 28px;
+    padding: 0 16px 40px;
 }
 
 .pl-table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 12.5px;
-    min-width: 560px;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+/* Cabeçalho */
+.pl-table thead tr {
+    background: var(--surface-2);
 }
 
 .pl-table thead th {
-    padding: 0 16px 10px;
+    padding: 10px 16px;
     text-align: left;
     font-size: 9.5px;
     font-weight: 700;
@@ -63,30 +66,38 @@
 }
 
 .pl-table thead th:first-child { padding-left: 20px; }
-.pl-table thead th:last-child  { padding-right: 20px; }
+.pl-table thead th:last-child  { padding-right: 16px; }
 
+/* Linhas */
 .pl-table tbody tr {
-    border-bottom: 1px solid var(--border);
     cursor: pointer;
     transition: background var(--t);
+    border-bottom: 1px solid var(--border);
 }
-.pl-table tbody tr:last-child { border-bottom: none; }
-.pl-table tbody tr:hover { background: var(--surface-2); }
-.pl-table tbody tr:active { background: var(--surface-3); }
+.pl-table tbody tr:last-child {
+    border-bottom: none;
+}
+.pl-table tbody tr:hover {
+    background: var(--surface-2);
+}
+.pl-table tbody tr:active {
+    background: var(--surface-3);
+}
 
 .pl-table tbody td {
-    padding: 11px 16px;
+    padding: 13px 16px;
     color: var(--text-1);
     vertical-align: middle;
+    font-size: 12.5px;
 }
 .pl-table tbody td:first-child { padding-left: 20px; }
-.pl-table tbody td:last-child  { padding-right: 20px; }
+.pl-table tbody td:last-child  { padding-right: 16px; }
 
 /* ── Colunas ── */
 .pl-col-id {
     width: 52px;
     color: var(--text-4) !important;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
 }
@@ -94,7 +105,6 @@
 .pl-col-title {
     font-weight: 600;
     color: var(--text-1);
-    max-width: 260px;
 }
 .pl-col-title-inner {
     white-space: nowrap;
@@ -103,12 +113,50 @@
     max-width: 260px;
 }
 
-.pl-col-type { width: 110px; }
-.pl-col-caption { width: 200px; }
-.pl-col-date { width: 130px; }
-.pl-col-action { width: 48px; text-align: right; }
+.pl-col-type   { width: 120px; }
+.pl-col-caption { width: 220px; }
+.pl-col-date   { width: 120px; }
+.pl-col-action { width: 36px; text-align: right; }
 
-/* ── Badge de tipo ── */
+/* ── Prévia de legenda ── */
+.pl-caption-preview {
+    color: var(--text-4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 220px;
+    display: block;
+    font-size: 12px;
+    font-style: italic;
+}
+.pl-caption-preview.has-caption {
+    color: var(--text-3);
+    font-style: normal;
+}
+
+/* ── Data ── */
+.pl-date-cell {
+    color: var(--text-4);
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* ── Seta ── */
+.pl-row-arrow {
+    color: var(--text-4);
+    font-size: 13px;
+    transition: transform var(--t), color var(--t);
+    display: block;
+}
+tr:hover .pl-row-arrow {
+    color: var(--text-2);
+    transform: translateX(2px);
+}
+
+/* ══════════════════════════════════════
+   BADGES DE TIPO
+══════════════════════════════════════ */
 .pl-type-badge {
     display: inline-flex;
     align-items: center;
@@ -125,54 +173,17 @@
 .pl-type-badge--reels     { background: #F5F0FB; border-color: #C8BAF0; color: #4E389E; }
 .pl-type-badge--stories   { background: #FEF8EF; border-color: #EECF94; color: #8A5A10; }
 .pl-type-badge--carousel  { background: var(--success-bg); border-color: var(--success-border); color: var(--success); }
-.pl-type-badge--null      { background: var(--surface-3); border-color: var(--border); color: var(--text-3); }
-
-/* ── Prévia de caption ── */
-.pl-caption-preview {
-    color: var(--text-3);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
-    font-size: 12px;
-    font-style: italic;
-}
-.pl-caption-preview.has-caption {
-    color: var(--text-2);
-    font-style: normal;
-}
-
-/* ── Data ── */
-.pl-date-cell {
-    color: var(--text-3);
-    font-size: 11.5px;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-}
-
-/* ── Seta de acesso ── */
-.pl-row-arrow {
-    color: var(--text-4);
-    font-size: 14px;
-    transition: transform var(--t), color var(--t);
-}
-tr:hover .pl-row-arrow {
-    color: var(--text-2);
-    transform: translateX(3px);
-}
+.pl-type-badge--null      { background: var(--surface-3); border-color: var(--border); color: var(--text-4); }
 
 /* ══════════════════════════════════════
    MODAL — PLANEJAMENTO
    Reutiliza .ct-modal-backdrop, .ct-modal,
-   .ct-modal-*, .ct-action-btn, etc.
+   .ct-modal-*, .ct-action-btn etc.
 ══════════════════════════════════════ */
-
-/* Painel mais largo no planejamento (sem coluna de mídia) */
 .pl-modal .ct-modal {
     max-width: 580px;
     flex-direction: column;
 }
-
 .pl-modal .ct-modal-panel {
     border-left: none;
     flex: 1;
@@ -181,137 +192,19 @@ tr:hover .pl-row-arrow {
     flex-direction: column;
 }
 
-/* ── Seção de roteiro ── */
-.pl-roteiro-text {
-    font-size: 12.5px;
-    line-height: 1.75;
-    color: var(--text-2);
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-.pl-roteiro-empty {
-    font-size: 12.5px;
-    color: var(--text-4);
-    font-style: italic;
-}
-
-/* ── Editor de tipo (select) ── */
-.pl-type-editor {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    animation: fadeUp .15s ease both;
-}
-
-.pl-type-select {
-    height: 36px;
-    padding: 0 10px;
-    font-family: var(--font);
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--text-1);
-    background: var(--surface-3);
-    border: 1px solid var(--border-mid);
-    border-radius: var(--radius-md);
-    outline: none;
-    cursor: pointer;
-    transition: border-color var(--t), box-shadow var(--t);
-    width: 100%;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath fill='%239A9890' d='m213.66 101.66-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32Z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    padding-right: 30px;
-}
-.pl-type-select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
-}
-
-.pl-type-editor-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 6px;
-}
-
-/* ── Editor de título ── */
-.pl-title-editor {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    animation: fadeUp .15s ease both;
-}
-
-.pl-title-input {
-    width: 100%;
-    height: 36px;
-    padding: 0 12px;
-    font-family: var(--font);
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--text-1);
-    background: var(--surface-3);
-    border: 1px solid var(--border-mid);
-    border-radius: var(--radius-md);
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color var(--t), box-shadow var(--t);
-}
-.pl-title-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
-}
-.pl-title-input::placeholder { color: var(--text-4); }
-
-.pl-title-editor-footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 6px;
-}
-
-/* ── Editor de roteiro ── */
-.pl-roteiro-editor {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    animation: fadeUp .15s ease both;
-}
-
-.pl-roteiro-textarea {
-    width: 100%;
-    min-height: 120px;
-    resize: vertical;
-    font-family: var(--font);
-    font-size: 12.5px;
-    line-height: 1.75;
-    color: var(--text-1);
-    background: var(--surface-3);
-    border: 1px solid var(--border-mid);
-    border-radius: var(--radius-md);
-    padding: 10px 12px;
-    outline: none;
-    box-sizing: border-box;
-    transition: border-color var(--t), box-shadow var(--t);
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
-}
-.pl-roteiro-textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
-}
-.pl-roteiro-textarea::placeholder { color: var(--text-4); }
-
-.pl-roteiro-editor-footer {
+/* ── Linha de label + botão editar ── */
+.pl-section-label-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    margin-bottom: 6px;
+}
+.pl-section-label-row .ct-modal-section-label {
+    margin-bottom: 0;
 }
 
-/* ── Botão editar inline (lápis) ── */
+/* ── Botão editar inline ── */
 .pl-edit-inline-btn {
     display: inline-flex;
     align-items: center;
@@ -336,8 +229,119 @@ tr:hover .pl-row-arrow {
     color: var(--text-1);
 }
 
-/* ── Label de seção com botão editar ── */
-.pl-section-label-row {
+/* ── Roteiro ── */
+.pl-roteiro-text {
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--text-2);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.pl-roteiro-empty {
+    font-size: 12.5px;
+    color: var(--text-4);
+    font-style: italic;
+}
+
+/* ── Editor: título ── */
+.pl-title-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeUp .15s ease both;
+}
+.pl-title-input {
+    width: 100%;
+    height: 36px;
+    padding: 0 12px;
+    font-family: var(--font);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-1);
+    background: var(--surface);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-md);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color var(--t), box-shadow var(--t);
+}
+.pl-title-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.pl-title-input::placeholder { color: var(--text-4); }
+.pl-title-editor-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ── Editor: tipo (select) ── */
+.pl-type-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeUp .15s ease both;
+}
+.pl-type-select {
+    height: 36px;
+    padding: 0 30px 0 10px;
+    font-family: var(--font);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-1);
+    background: var(--surface);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-md);
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath fill='%239A9890' d='m213.66 101.66-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32Z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color var(--t), box-shadow var(--t);
+}
+.pl-type-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.pl-type-editor-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ── Editor: roteiro ── */
+.pl-roteiro-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    animation: fadeUp .15s ease both;
+}
+.pl-roteiro-textarea {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    font-family: var(--font);
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--text-1);
+    background: var(--surface);
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color var(--t), box-shadow var(--t);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+.pl-roteiro-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.pl-roteiro-textarea::placeholder { color: var(--text-4); }
+.pl-roteiro-editor-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -353,28 +357,120 @@ tr:hover .pl-row-arrow {
 }
 
 /* ══════════════════════════════════════
-   RESPONSIVO
+   MOBILE — CARDS EM VEZ DE TABELA
 ══════════════════════════════════════ */
 @media (max-width: 768px) {
+
     .pl-header {
-        padding: 14px 14px 12px;
+        padding: 18px 16px 14px;
     }
 
-    .pl-table-wrap {
-        padding: 10px 0 24px;
+    .pl-header-title { font-size: 15px; }
+
+    /* Esconde a tabela no mobile */
+    .pl-table-wrap { display: none; }
+
+    /* Lista de cards */
+    .pl-cards-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: 0 0 40px;
     }
 
-    .pl-table tbody td,
-    .pl-table thead th {
-        padding-left: 12px;
-        padding-right: 12px;
+    .pl-card {
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: background var(--t);
+        -webkit-tap-highlight-color: transparent;
     }
-    .pl-table tbody td:first-child,
-    .pl-table thead th:first-child { padding-left: 14px; }
-    .pl-table tbody td:last-child,
-    .pl-table thead th:last-child  { padding-right: 14px; }
+    .pl-card:last-child {
+        border-bottom: 1px solid var(--border);
+    }
+    .pl-card:active {
+        background: var(--surface-2);
+    }
 
-    .pl-col-title-inner { max-width: 160px; }
-    .pl-caption-preview { max-width: 120px; }
-    .pl-col-date { display: none; }
+    .pl-card-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .pl-card-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pl-card-id {
+        font-size: 10px;
+        color: var(--text-4);
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+    }
+
+    .pl-card-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-1);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pl-card-bottom {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pl-card-caption {
+        font-size: 11.5px;
+        color: var(--text-4);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+        font-style: italic;
+    }
+    .pl-card-caption.has-caption {
+        color: var(--text-3);
+        font-style: normal;
+    }
+
+    .pl-card-date {
+        font-size: 10.5px;
+        color: var(--text-4);
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pl-card-arrow {
+        color: var(--text-4);
+        font-size: 14px;
+        flex-shrink: 0;
+        transition: transform var(--t), color var(--t);
+    }
+    .pl-card:active .pl-card-arrow {
+        color: var(--text-2);
+        transform: translateX(2px);
+    }
+}
+
+/* No desktop, esconde a lista de cards */
+@media (min-width: 769px) {
+    .pl-cards-list { display: none; }
 }

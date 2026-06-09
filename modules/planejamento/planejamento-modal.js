@@ -75,7 +75,7 @@ async function _plSalvarCampo(postagem, campo, novoValor, labelItem, onAtualizar
 
         const novoLog = {
             EM:        agora,
-            ACAO:      'PL01 - ITEM EDITADO',
+            ACAO:      'PORTAL - ITEM EDITADO',
             ITEM:      labelItem,
             QUEM:      quem,
             ALTERACAO: `${antigoResumido.toUpperCase()} | ${novoResumido.toUpperCase()}`,
@@ -342,7 +342,7 @@ function plAbrirModal(postagem, onAtualizar) {
                 const { logs: logsAtuais } = await _buscarLogs(postagem.id);
                 const novoLog = {
                     EM:        agora,
-                    ACAO:      'PL01 - ITEM EDITADO',
+                    ACAO:      'PORTAL - ITEM EDITADO',
                     ITEM:      'TIPO',
                     QUEM:      quem,
                     ALTERACAO: `${labelAntigo.toUpperCase()} | ${labelNovo.toUpperCase()}`,
