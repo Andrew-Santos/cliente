@@ -39,7 +39,6 @@ async function renderAgendamento(el, conta) {
             `)
             .eq('id_cliente', conta.id)
             .in('status', ['APROVADO', 'AGENDADO', 'FALHOU', 'PROCESSANDO'])
-            .neq('type', 'STORIES')
             .order('data_agendamento', { ascending: true, nullsFirst: false });
 
         if (error) throw error;
