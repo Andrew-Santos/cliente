@@ -183,6 +183,7 @@ tr:hover .pl-row-arrow {
 .pl-modal .ct-modal {
     max-width: 580px;
     flex-direction: column;
+    max-height: calc(100dvh - 48px);
 }
 .pl-modal .ct-modal-panel {
     border-left: none;
@@ -232,7 +233,7 @@ tr:hover .pl-row-arrow {
 /* ── Roteiro ── */
 .pl-roteiro-text {
     font-size: 12.5px;
-    line-height: 1.75;
+    line-height: 1.6;
     color: var(--text-2);
     white-space: pre-wrap;
     word-break: break-word;
@@ -241,6 +242,16 @@ tr:hover .pl-row-arrow {
     font-size: 12.5px;
     color: var(--text-4);
     font-style: italic;
+}
+
+/* ── Legenda e roteiro: texto justificado, sem recuo,
+   simples e sem espaçamento exagerado ── */
+.pl-modal .ct-modal-caption,
+.pl-modal .pl-roteiro-text {
+    text-align: justify;
+    text-align-last: left;
+    text-indent: 0;
+    hyphens: auto;
 }
 
 /* ── Editor: título ── */
@@ -346,6 +357,129 @@ tr:hover .pl-row-arrow {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+}
+
+/* ══════════════════════════════════════
+   MODAL — AJUSTES MOBILE
+   conteudo.css esconde o .ct-modal-close e
+   espera um .ct-modal-close-float (usado
+   quando há mídia). Este modal não tem
+   mídia, então esse botão nunca existe —
+   sem os ajustes abaixo o usuário perde o
+   "fechar" ao rolar a tela no celular.
+══════════════════════════════════════ */
+@media (max-width: 640px) {
+
+    /* Este modal não ocupa a tela toda no celular — fica como
+       um cartão com respiro nas bordas, para a barra do
+       navegador não cortar o topo/rodapé */
+    .pl-modal.ct-modal-backdrop {
+        padding: 14px;
+        align-items: center;
+    }
+
+    .pl-modal .ct-modal {
+        width: 100%;
+        height: auto;
+        max-height: calc(100dvh - 28px);
+        border-radius: var(--radius-lg);
+        /* Este modal não tem coluna de mídia, então o padrão
+           "scroll único no .ct-modal" do conteudo.css não se
+           aplica aqui — quem rola é o .ct-modal-scroll interno. */
+        overflow: hidden;
+    }
+
+    /* Restaura o scroll interno do painel (o conteudo.css
+       desativa o .ct-modal-scroll no mobile pensando no modal
+       com mídia, o que travava a rolagem aqui) */
+    .pl-modal .ct-modal-scroll {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Cabeçalho fica fixo no topo ao rolar, com o X sempre visível */
+    .pl-modal .ct-modal-panel-header {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: var(--surface);
+    }
+    .pl-modal .ct-modal-close {
+        display: flex !important;
+    }
+
+    .pl-modal .ct-modal-panel-title {
+        font-size: 15px;
+    }
+    .pl-modal .ct-modal-panel-title span {
+        font-size: 12px;
+    }
+
+    .pl-modal .ct-modal-body {
+        padding: 18px 16px 40px;
+        gap: 20px;
+    }
+
+    .pl-modal .ct-modal-section-label {
+        font-size: 11px;
+    }
+
+    /* Textos de leitura um pouco maiores no celular,
+       mas sem espaçamento exagerado entre linhas */
+    .pl-modal .pl-title-display,
+    .pl-modal .ct-modal-caption,
+    .pl-modal .ct-modal-caption-empty,
+    .pl-modal .pl-roteiro-text,
+    .pl-modal .pl-roteiro-empty {
+        font-size: 14px;
+        line-height: 1.55;
+    }
+
+    .pl-modal .ct-modal-info-row {
+        font-size: 13.5px;
+        padding: 10px 0;
+    }
+
+    .pl-modal .ct-modal-status {
+        font-size: 12px;
+        padding: 4px 11px;
+    }
+
+    .pl-modal .pl-type-badge {
+        font-size: 12.5px;
+        padding: 4px 10px;
+    }
+
+    /* Botão "Editar" com alvo de toque melhor */
+    .pl-modal .pl-edit-inline-btn {
+        height: 32px;
+        padding: 0 11px;
+        font-size: 12.5px;
+    }
+    .pl-modal .pl-edit-inline-btn i {
+        font-size: 13px;
+    }
+
+    /* Campos de edição maiores para digitar/tocar no celular */
+    .pl-modal .pl-title-input,
+    .pl-modal .pl-type-select {
+        height: 46px;
+        font-size: 15px;
+    }
+    .pl-modal .pl-roteiro-textarea,
+    .pl-modal .ct-caption-textarea {
+        font-size: 15px;
+        line-height: 1.8;
+        min-height: 140px;
+    }
+    .pl-modal .ct-caption-btn {
+        height: 40px;
+        font-size: 13px;
+        padding: 0 16px;
+    }
 }
 
 /* ══════════════════════════════════════

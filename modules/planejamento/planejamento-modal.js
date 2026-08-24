@@ -119,8 +119,7 @@ function plAbrirModal(postagem, onAtualizar) {
 
     backdrop.innerHTML = `
         <div class="ct-modal" id="pl-modal" role="dialog" aria-modal="true"
-             aria-label="${_plEsc(postagem.title || 'Postagem #' + postagem.id)}"
-             style="max-width:580px;flex-direction:column;max-height:calc(100dvh - 48px);">
+             aria-label="${_plEsc(postagem.title || 'Postagem #' + postagem.id)}">
 
             <!-- Painel único (sem coluna de mídia) -->
             <div class="ct-modal-panel" style="border-left:none;flex:1;overflow:hidden;display:flex;flex-direction:column;">
@@ -163,21 +162,6 @@ function plAbrirModal(postagem, onAtualizar) {
                             </div>
                         </div>
 
-                        <!-- ── Legenda ── -->
-                        <div class="ct-modal-section ct-caption-section" id="pl-sec-caption">
-                            <div class="pl-section-label-row">
-                                <p class="ct-modal-section-label">Legenda</p>
-                                <button class="pl-edit-inline-btn" id="pl-btn-edit-caption">
-                                    <i class="ph ph-pencil-simple"></i> Editar
-                                </button>
-                            </div>
-                            <p class="ct-modal-caption${postagem.captions ? '' : '-empty'}" id="pl-caption-display">
-                                ${postagem.captions
-                                    ? _plEsc(postagem.captions)
-                                    : 'Sem legenda cadastrada.'}
-                            </p>
-                        </div>
-
                         <!-- ── Roteiro ── -->
                         <div class="ct-modal-section" id="pl-sec-roteiro">
                             <div class="pl-section-label-row">
@@ -186,11 +170,18 @@ function plAbrirModal(postagem, onAtualizar) {
                                     <i class="ph ph-pencil-simple"></i> Editar
                                 </button>
                             </div>
-                            <p class="${postagem.roteiro ? 'pl-roteiro-text' : 'pl-roteiro-empty'}" id="pl-roteiro-display">
-                                ${postagem.roteiro
-                                    ? _plEsc(postagem.roteiro)
-                                    : 'Sem roteiro cadastrado.'}
-                            </p>
+                            <p class="${postagem.roteiro ? 'pl-roteiro-text' : 'pl-roteiro-empty'}" id="pl-roteiro-display">${postagem.roteiro ? _plEsc(postagem.roteiro) : 'Sem roteiro cadastrado.'}</p>
+                        </div>
+
+                        <!-- ── Legenda ── -->
+                        <div class="ct-modal-section ct-caption-section" id="pl-sec-caption">
+                            <div class="pl-section-label-row">
+                                <p class="ct-modal-section-label">Legenda</p>
+                                <button class="pl-edit-inline-btn" id="pl-btn-edit-caption">
+                                    <i class="ph ph-pencil-simple"></i> Editar
+                                </button>
+                            </div>
+                            <p class="ct-modal-caption${postagem.captions ? '' : '-empty'}" id="pl-caption-display">${postagem.captions ? _plEsc(postagem.captions) : 'Sem legenda cadastrada.'}</p>
                         </div>
 
                         <!-- ── Informações ── -->

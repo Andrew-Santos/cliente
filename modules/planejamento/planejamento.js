@@ -1,4 +1,3 @@
-
 let _plPosts  = [];
 let _plElRaiz = null;
 
