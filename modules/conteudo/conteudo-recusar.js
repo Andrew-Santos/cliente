@@ -77,26 +77,40 @@ function _recusarInjetarCSS() {
 .ct-recusar-empty i { font-size: 24px; opacity: .35; }
 
 /* ── Balões ── */
-.ct-rec-msg-row { display: flex; justify-content: flex-end; }
+.ct-rec-msg-row { display: flex; }
+.ct-rec-msg-row--me    { justify-content: flex-end; }
+.ct-rec-msg-row--other { justify-content: flex-start; }
+
 .ct-rec-msg-bubble {
     max-width: 85%; padding: 7px 11px 6px;
-    border-radius: 14px 14px 4px 14px;
-    background: var(--text-1); color: #fff;
     font-size: 12.5px; line-height: 1.55;
     display: flex; flex-direction: column; gap: 3px;
     word-break: break-word;
 }
+.ct-rec-msg-bubble--me {
+    border-radius: 14px 14px 4px 14px;
+    background: var(--text-1); color: #fff;
+}
+.ct-rec-msg-bubble--other {
+    border-radius: 14px 14px 14px 4px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+}
 .ct-rec-msg-time {
-    font-size: 9px; color: rgba(255,255,255,.45);
+    font-size: 9px;
     align-self: flex-end; white-space: nowrap;
 }
+.ct-rec-msg-bubble--me .ct-rec-msg-time    { color: rgba(255,255,255,.45); }
+.ct-rec-msg-bubble--other .ct-rec-msg-time { color: var(--text-4); }
 
 /* ── Nome do remetente ── */
 .ct-rec-msg-user {
     font-size: 9.5px; font-weight: 700;
-    color: rgba(255,255,255,.60);
     letter-spacing: .03em; margin-bottom: 1px;
 }
+.ct-rec-msg-bubble--me .ct-rec-msg-user    { color: rgba(255,255,255,.60); }
+.ct-rec-msg-bubble--other .ct-rec-msg-user { color: var(--text-3); }
 
 /* Player de áudio no balão */
 .ct-rec-ap {
@@ -124,6 +138,16 @@ function _recusarInjetarCSS() {
     flex-shrink: 0; min-width: 28px;
     font-variant-numeric: tabular-nums;
 }
+
+/* Player de áudio — variante para balões claros (remetentes que não são o cliente) */
+.ct-rec-ap--other .ct-rec-ap-play {
+    background: var(--surface-2);
+    border: 1px solid var(--border-mid);
+    color: var(--text-1);
+}
+.ct-rec-ap--other .ct-rec-ap-bar { background: var(--border-mid); }
+.ct-rec-ap--other .ct-rec-ap-bar.active { background: var(--accent); }
+.ct-rec-ap--other .ct-rec-ap-time { color: var(--text-3); }
 
 /* ── Área de composição ── */
 .ct-recusar-compose {
@@ -162,6 +186,10 @@ function _recusarInjetarCSS() {
     background: var(--text-1); color: #fff; border-color: var(--text-1);
     animation: ct-rec-pulse 1.2s ease-in-out infinite;
 }
+.ct-rec-btn-mic.recording.paused {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+    animation: none;
+}
 .ct-rec-btn-send {
     width: 36px; height: 36px; flex-shrink: 0;
     background: var(--text-1); color: #fff;
@@ -183,6 +211,9 @@ function _recusarInjetarCSS() {
     width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
     background: var(--danger); animation: ct-rec-pulse .9s ease-in-out infinite;
 }
+.ct-rec-rec-dot.pausado {
+    background: var(--text-4); animation: none; opacity: .6;
+}
 .ct-rec-rec-wave {
     flex: 1; height: 26px; display: flex; align-items: center;
     gap: 2px; overflow: hidden;
@@ -195,6 +226,11 @@ function _recusarInjetarCSS() {
 .ct-rec-rec-timer {
     font-size: 11px; font-variant-numeric: tabular-nums;
     color: var(--text-1); font-weight: 700; flex-shrink: 0;
+}
+.ct-rec-rec-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .04em;
+    color: var(--text-3); white-space: nowrap; flex-shrink: 0;
+    text-transform: uppercase;
 }
 .ct-rec-audio-cancel {
     width: 22px; height: 22px; border-radius: 50%;
@@ -267,12 +303,97 @@ function _recusarInjetarCSS() {
     document.head.appendChild(s);
 }
 
+// ── Conversão de áudio para MP3 ────────────────────────────────────────────────
+// MediaRecorder não grava em mp3 nativamente (o navegador só oferece webm/ogg),
+// então gravamos normalmente e, ao parar, decodificamos o áudio e o
+// reencodamos em mp3 com lamejs antes de enviar.
+let _lameJsPromise = null;
+function _recCarregarLameJs() {
+    if (window.lamejs) return Promise.resolve();
+    if (_lameJsPromise) return _lameJsPromise;
+    _lameJsPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js';
+        script.onload  = () => resolve();
+        script.onerror = () => reject(new Error('Falha ao carregar lamejs'));
+        document.head.appendChild(script);
+    });
+    return _lameJsPromise;
+}
+
+/**
+ * Converte um Blob de áudio (webm/ogg gravado pelo MediaRecorder) em Blob mp3.
+ * Em caso de falha (lib não carrega, navegador não decodifica, etc.),
+ * lança erro — quem chamar deve ter um fallback para o blob original.
+ * @param {Blob} blob
+ * @returns {Promise<Blob>} blob no formato audio/mp3
+ */
+async function _recConverterParaMp3(blob) {
+    await _recCarregarLameJs();
+
+    const arrayBuffer = await blob.arrayBuffer();
+    const AudioCtx     = window.AudioContext || window.webkitAudioContext;
+    const audioCtx     = new AudioCtx();
+    let audioBuffer;
+    try {
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    } finally {
+        audioCtx.close().catch(() => {});
+    }
+
+    // Mono é suficiente para voz e mantém o arquivo leve
+    const samples    = audioBuffer.getChannelData(0);
+    const sampleRate = audioBuffer.sampleRate;
+
+    // Converte Float32 [-1, 1] → Int16 (formato que o encoder espera)
+    const amostrasInt16 = new Int16Array(samples.length);
+    for (let i = 0; i < samples.length; i++) {
+        const s = Math.max(-1, Math.min(1, samples[i]));
+        amostrasInt16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+
+    const encoder   = new window.lamejs.Mp3Encoder(1, sampleRate, 96); // mono, 96kbps
+    const blockSize = 1152;
+    const partes    = [];
+
+    for (let i = 0; i < amostrasInt16.length; i += blockSize) {
+        const chunk  = amostrasInt16.subarray(i, i + blockSize);
+        const mp3Buf = encoder.encodeBuffer(chunk);
+        if (mp3Buf.length > 0) partes.push(mp3Buf);
+    }
+    const restante = encoder.flush();
+    if (restante.length > 0) partes.push(restante);
+
+    const mp3Blob = new Blob(partes, { type: 'audio/mpeg' });
+
+    // Confirma que o mp3 gerado é realmente decodificável antes de usá-lo.
+    // Se o encoder produziu algo corrompido, é melhor cair no áudio original
+    // (webm) do que subir um arquivo que não toca em lugar nenhum.
+    await _recValidarAudioDecodavel(mp3Blob);
+
+    return mp3Blob;
+}
+
+async function _recValidarAudioDecodavel(blob) {
+    const buf = await blob.arrayBuffer();
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioCtx();
+    try {
+        const decodado = await ctx.decodeAudioData(buf);
+        if (!decodado || !(decodado.duration > 0)) {
+            throw new Error('mp3 gerado não tem duração válida');
+        }
+    } finally {
+        ctx.close().catch(() => {});
+    }
+}
+
 // ── Estado de áudio ───────────────────────────────────────────────────────────
 function _recAudioInit() {
     return {
         recorder: null, stream: null, chunks: [], blob: null,
-        timerInt: null, segundos: 0, gravando: false, temPreview: false,
-        _waveAnim: null, _analyser: null,
+        timerInt: null, segundos: 0, gravando: false, pausado: false, temPreview: false,
+        _waveAnim: null, _analyser: null, _audioCtx: null,
     };
 }
 
@@ -293,37 +414,62 @@ function _recBarrasHTML(n) {
     }).join('');
 }
 
+// ── Atualiza apenas o ícone do botão de mic conforme o estado ─────────────────
+function _recAtualizarIconeMic(st, micBtn) {
+    micBtn.classList.remove('recording', 'paused');
+    if (st.gravando) {
+        micBtn.classList.add('recording');
+        if (st.pausado) {
+            micBtn.classList.add('paused');
+            micBtn.innerHTML = '<i class="ph ph-play"></i>';
+            micBtn.title = 'Retomar gravação';
+        } else {
+            micBtn.innerHTML = '<i class="ph ph-pause"></i>';
+            micBtn.title = 'Pausar gravação';
+        }
+    } else {
+        micBtn.innerHTML = '<i class="ph ph-microphone"></i>';
+        micBtn.title = 'Gravar áudio';
+    }
+}
+
 // ── Renderiza área de gravação/preview ────────────────────────────────────────
+// IMPORTANTE: só reconstrói o HTML da barra de gravação quando a gravação
+// COMEÇA. Pausar/retomar usa _recTogglePausa (abaixo), que só atualiza classes
+// e ícones no lugar — assim o visualizador de onda não é recriado a cada clique.
 function _recRenderAudioArea(st, areaEl, micBtn) {
     if (st._waveAnim && !st.gravando) {
         cancelAnimationFrame(st._waveAnim); st._waveAnim = null;
     }
+    if (!st.gravando && st._audioCtx) {
+        st._audioCtx.close().catch(() => {});
+        st._audioCtx = null;
+    }
 
     if (!st.gravando && !st.temPreview) {
         areaEl.innerHTML = '';
-        micBtn.classList.remove('recording');
-        micBtn.innerHTML = '<i class="ph ph-microphone"></i>';
+        _recAtualizarIconeMic(st, micBtn);
 
     } else if (st.gravando) {
         areaEl.innerHTML = `
             <div class="ct-rec-rec-bar" id="ct-rec-bar">
-                <div class="ct-rec-rec-dot"></div>
+                <button class="ct-rec-audio-cancel" id="ct-rec-cancel" title="Descartar gravação">
+                    <i class="ph ph-trash"></i>
+                </button>
+                <div class="ct-rec-rec-dot" id="ct-rec-dot"></div>
                 <div class="ct-rec-rec-wave" id="ct-rec-wave">
                     ${Array.from({ length: 28 }, (_, i) =>
                         `<div class="ct-rec-rec-wbar" id="ct-rec-wb-${i}"></div>`).join('')}
                 </div>
                 <span class="ct-rec-rec-timer" id="ct-rec-timer">${_recFmtSeg(st.segundos)}</span>
-                <button class="ct-rec-audio-cancel" id="ct-rec-cancel">
-                    <i class="ph ph-x"></i>
-                </button>
+                <span class="ct-rec-rec-label" id="ct-rec-label" style="display:none;">Pausado</span>
             </div>`;
-        micBtn.classList.add('recording');
-        micBtn.innerHTML = '<i class="ph ph-stop"></i>';
+        _recAtualizarIconeMic(st, micBtn);
 
         document.getElementById('ct-rec-cancel')
             ?.addEventListener('click', () => _recCancelarAudio(st, areaEl, micBtn));
 
-        // Visualizador de onda
+        // Visualizador de onda — criado uma única vez por gravação
         if (st.stream) {
             try {
                 const ctx      = new AudioContext();
@@ -332,16 +478,19 @@ function _recRenderAudioArea(st, areaEl, micBtn) {
                 analyser.fftSize = 64;
                 source.connect(analyser);
                 st._analyser = analyser;
+                st._audioCtx = ctx;
                 const bufLen = analyser.frequencyBinCount;
                 const data   = new Uint8Array(bufLen);
                 const barEls = document.querySelectorAll('[id^="ct-rec-wb-"]');
                 const n      = barEls.length;
                 const animate = () => {
                     if (!st.gravando) return;
-                    analyser.getByteFrequencyData(data);
-                    for (let i = 0; i < n; i++) {
-                        const val = data[Math.floor(i * bufLen / n)] / 255;
-                        barEls[i].style.height = Math.max(15, Math.round(val * 100)) + '%';
+                    if (!st.pausado) {
+                        analyser.getByteFrequencyData(data);
+                        for (let i = 0; i < n; i++) {
+                            const val = data[Math.floor(i * bufLen / n)] / 255;
+                            barEls[i].style.height = Math.max(15, Math.round(val * 100)) + '%';
+                        }
                     }
                     st._waveAnim = requestAnimationFrame(animate);
                 };
@@ -350,7 +499,9 @@ function _recRenderAudioArea(st, areaEl, micBtn) {
                 const barEls = document.querySelectorAll('[id^="ct-rec-wb-"]');
                 const fallback = () => {
                     if (!st.gravando) return;
-                    barEls.forEach(b => { b.style.height = (15 + Math.random() * 85) + '%'; });
+                    if (!st.pausado) {
+                        barEls.forEach(b => { b.style.height = (15 + Math.random() * 85) + '%'; });
+                    }
                     st._waveAnim = requestAnimationFrame(fallback);
                 };
                 fallback();
@@ -367,20 +518,74 @@ function _recRenderAudioArea(st, areaEl, micBtn) {
                     <i class="ph ph-trash"></i>
                 </button>
             </div>`;
-        micBtn.classList.remove('recording');
-        micBtn.innerHTML = '<i class="ph ph-microphone"></i>';
+        _recAtualizarIconeMic(st, micBtn);
 
         document.getElementById('ct-rec-preview-cancel')
             ?.addEventListener('click', () => _recCancelarAudio(st, areaEl, micBtn));
     }
 }
 
-function _recCancelarAudio(st, areaEl, micBtn) {
-    if (st._waveAnim)  { cancelAnimationFrame(st._waveAnim); st._waveAnim = null; }
-    if (st._analyser)  { try { st._analyser.disconnect(); } catch {} st._analyser = null; }
-    if (st.gravando)   { st.recorder?.stop(); clearInterval(st.timerInt); }
+// ── Pausa ou retoma a gravação em andamento (não envia, não descarta) ─────────
+function _recTogglePausa(st, areaEl, micBtn) {
+    if (!st.gravando || !st.recorder) return;
+
+    if (st.pausado) {
+        if (st.recorder.state === 'paused') st.recorder.resume();
+        st.pausado = false;
+    } else {
+        if (st.recorder.state === 'recording') st.recorder.pause();
+        st.pausado = true;
+    }
+
+    const dot   = document.getElementById('ct-rec-dot');
+    const label = document.getElementById('ct-rec-label');
+    dot?.classList.toggle('pausado', st.pausado);
+    if (label) label.style.display = st.pausado ? '' : 'none';
+
+    _recAtualizarIconeMic(st, micBtn);
+}
+
+// ── Finaliza a gravação: converte para mp3 (com fallback para webm) ───────────
+async function _recFinalizarGravacao(st, areaEl, micBtn) {
     st.stream?.getTracks().forEach(t => t.stop());
-    Object.assign(st, { chunks:[], blob:null, gravando:false, temPreview:false, segundos:0, stream:null });
+    clearInterval(st.timerInt);
+    Object.assign(st, { stream: null, gravando: false, pausado: false });
+
+    const blobOriginal = new Blob(st.chunks, { type: 'audio/webm' });
+
+    // Feedback visual enquanto converte
+    areaEl.innerHTML = `
+        <div class="ct-rec-audio-preview">
+            <i class="ph ph-circle-notch ct-spin" style="flex-shrink:0;color:var(--text-3);"></i>
+            <span style="font-size:12px;color:var(--text-3);">Convertendo áudio…</span>
+        </div>`;
+
+    try {
+        st.blob = await _recConverterParaMp3(blobOriginal);
+    } catch (e) {
+        console.warn('[recusar] falha ao converter para mp3, usando áudio original:', e);
+        st.blob = blobOriginal;
+    }
+
+    st.temPreview = true;
+    _recRenderAudioArea(st, areaEl, micBtn);
+}
+
+function _recCancelarAudio(st, areaEl, micBtn) {
+    if (st._waveAnim) { cancelAnimationFrame(st._waveAnim); st._waveAnim = null; }
+    if (st._analyser) { try { st._analyser.disconnect(); } catch {} st._analyser = null; }
+    if (st._audioCtx) { st._audioCtx.close().catch(() => {}); st._audioCtx = null; }
+    if (st.gravando) {
+        if (st.recorder) st.recorder.onstop = null; // evita finalizar/enviar ao cancelar
+        if (st.recorder && st.recorder.state === 'paused') st.recorder.resume();
+        st.recorder?.stop();
+        clearInterval(st.timerInt);
+    }
+    st.stream?.getTracks().forEach(t => t.stop());
+    Object.assign(st, {
+        chunks: [], blob: null, gravando: false, pausado: false,
+        temPreview: false, segundos: 0, stream: null,
+    });
     _recRenderAudioArea(st, areaEl, micBtn);
 }
 
@@ -392,18 +597,13 @@ async function _recIniciarGravacao(st, areaEl, micBtn) {
         _toast('Permissão de microfone negada.', 'erro');
         return;
     }
-    Object.assign(st, { chunks:[], blob:null, segundos:0, gravando:true, temPreview:false });
+    Object.assign(st, { chunks:[], blob:null, segundos:0, gravando:true, pausado:false, temPreview:false });
     st.recorder = new MediaRecorder(st.stream);
     st.recorder.ondataavailable = e => { if (e.data.size > 0) st.chunks.push(e.data); };
-    st.recorder.onstop = () => {
-        st.blob = new Blob(st.chunks, { type: 'audio/webm' });
-        st.stream?.getTracks().forEach(t => t.stop());
-        Object.assign(st, { stream:null, gravando:false, temPreview:true });
-        clearInterval(st.timerInt);
-        _recRenderAudioArea(st, areaEl, micBtn);
-    };
+    st.recorder.onstop = () => { _recFinalizarGravacao(st, areaEl, micBtn); };
     st.recorder.start(200);
     st.timerInt = setInterval(() => {
+        if (st.pausado) return; // não avança o cronômetro enquanto pausado
         st.segundos++;
         const el = document.getElementById('ct-rec-timer');
         if (el) el.textContent = _recFmtSeg(st.segundos);
@@ -414,7 +614,8 @@ async function _recIniciarGravacao(st, areaEl, micBtn) {
 
 async function _recUploadAudio(blob) {
     const formData = new FormData();
-    formData.append('file', blob, `audio_recusa_${Date.now()}.webm`);
+    const ext = /mp3|mpeg/i.test(blob.type) ? 'mp3' : 'webm';
+    formData.append('file', blob, `audio_recusa_${Date.now()}.${ext}`);
     formData.append('folder', 'portal/recusas/audio');
     const res = await fetch(`${_RECUSAR_WORKER}/upload-audio`, { method: 'POST', body: formData });
     if (!res.ok) {
@@ -454,6 +655,14 @@ function _recInitPlayers(container) {
             bars.forEach(b => b.classList.remove('active'));
             if (isFinite(audio.duration)) timeEl.textContent = _recFmtT(audio.duration);
         });
+        audio.addEventListener('error', () => {
+            const codigo = audio.error?.code;
+            console.error('[recusar] falha ao carregar áudio:', src, 'código:', codigo);
+            playBtn.disabled  = true;
+            playBtn.innerHTML = '<i class="ph ph-warning"></i>';
+            timeEl.textContent = 'erro';
+            timeEl.title = 'Não foi possível carregar este áudio. Verifique se o link ainda está acessível.';
+        });
         waveEl.addEventListener('click', e => {
             if (!audio.duration || !isFinite(audio.duration)) return;
             const rect = waveEl.getBoundingClientRect();
@@ -464,7 +673,11 @@ function _recInitPlayers(container) {
             if (audio.paused) {
                 audio.play().then(() => {
                     playBtn.innerHTML = '<i class="ph ph-pause"></i>';
-                }).catch(() => { playBtn.innerHTML = '<i class="ph ph-play"></i>'; });
+                }).catch(e => {
+                    console.error('[recusar] falha ao tocar áudio:', src, e);
+                    playBtn.innerHTML = '<i class="ph ph-play"></i>';
+                    _toast('Não foi possível tocar este áudio.', 'erro');
+                });
             } else {
                 audio.pause();
                 playBtn.innerHTML = '<i class="ph ph-play"></i>';
@@ -500,6 +713,18 @@ function _recRenderLista(mensagens, listaEl) {
 
         // Nome do remetente (banco usa user_name, local não tem)
         const nomeRem = m.user_name || '';
+
+        // ── Detecta se a mensagem é do cliente ──────────────────────────
+        // Mensagens enviadas pelo próprio portal do cliente sempre gravam o
+        // nome em CAIXA ALTA (ver _getNomeUsuario().toUpperCase()); nomes
+        // vindos do painel da equipe (ex.: "Ester Braz") vêm em caixa normal.
+        // Mensagens locais (ainda sem user_name, compostas na hora) também
+        // são sempre do cliente.
+        const ehCliente = !nomeRem || nomeRem === nomeRem.toUpperCase();
+        const ladoClasse  = ehCliente ? 'ct-rec-msg-row--me'    : 'ct-rec-msg-row--other';
+        const bolhaClasse = ehCliente ? 'ct-rec-msg-bubble--me' : 'ct-rec-msg-bubble--other';
+        const apClasse    = ehCliente ? '' : ' ct-rec-ap--other';
+
         const nomeHTML = nomeRem
             ? `<span class="ct-rec-msg-user">${_recEsc(nomeRem)}</span>`
             : '';
@@ -508,10 +733,10 @@ function _recRenderLista(mensagens, listaEl) {
             // url vem de m.url (banco) ou m.url (local após upload)
             const audioUrl = m.url || '';
             return `
-                <div class="ct-rec-msg-row">
-                    <div class="ct-rec-msg-bubble">
+                <div class="ct-rec-msg-row ${ladoClasse}">
+                    <div class="ct-rec-msg-bubble ${bolhaClasse}">
                         ${nomeHTML}
-                        <div class="ct-rec-ap" data-src="${_recEsc(audioUrl)}" data-init="">
+                        <div class="ct-rec-ap${apClasse}" data-src="${_recEsc(audioUrl)}">
                             <button class="ct-rec-ap-play"><i class="ph ph-play"></i></button>
                             <div class="ct-rec-ap-wave">${_recBarrasHTML(28)}</div>
                             <span class="ct-rec-ap-time">–:––</span>
@@ -524,8 +749,8 @@ function _recRenderLista(mensagens, listaEl) {
         // Texto: banco usa message, local usa texto
         const texto = m.message || m.texto || '';
         return `
-            <div class="ct-rec-msg-row">
-                <div class="ct-rec-msg-bubble">
+            <div class="ct-rec-msg-row ${ladoClasse}">
+                <div class="ct-rec-msg-bubble ${bolhaClasse}">
                     ${nomeHTML}
                     <div>${_recEsc(texto).replace(/\n/g, '<br>')}</div>
                     <span class="ct-rec-msg-time">${hora}</span>
@@ -544,20 +769,25 @@ function _recEsc(v) {
 }
 
 // ── Função principal ──────────────────────────────────────────────────────────
+// ── Busca mensagens atuais direto do banco ────────────────────────────────────
+async function _recBuscarMensagens(postagemId) {
+    const { data, error } = await _db()
+        .from('postagens')
+        .select('mensagens')
+        .eq('id', postagemId)
+        .single();
+    if (error) throw error;
+    return Array.isArray(data.mensagens) ? data.mensagens : [];
+}
+
 async function acaoRecusar(postagem, onSucesso) {
     _recusarInjetarCSS();
 
-    // ── Carrega mensagens existentes do objeto postagem ───────────────────────
-    // Mescla histórico do banco com novas mensagens da sessão
-    const mensagensHistorico = Array.isArray(postagem.mensagens)
-        ? postagem.mensagens
-        : [];
-
-    // Novas mensagens adicionadas nesta sessão de recusa (ainda não salvas)
-    const mensagensLocais = [];
-
-    // Lista combinada para exibição (histórico + novas)
-    const _todasMensagens = () => [...mensagensHistorico, ...mensagensLocais];
+    // Mensagens já persistidas no banco (histórico). Esse array é atualizado
+    // conforme o cliente vai enviando novas mensagens — cada uma é salva no
+    // banco IMEDIATAMENTE, para não se perder caso a janela seja fechada
+    // antes de "Confirmar recusa" (o cliente pode ir pontuando aos poucos).
+    let mensagensAtuais = Array.isArray(postagem.mensagens) ? postagem.mensagens.slice() : [];
 
     const st = _recAudioInit();
 
@@ -603,8 +833,8 @@ async function acaoRecusar(postagem, onSucesso) {
             <!-- Footer -->
             <div class="ct-recusar-footer">
                 <span class="ct-recusar-footer-hint">
-                    Envie as mensagens de feedback e depois<br>
-                    <strong>confirme a recusa</strong> para alterar o status.
+                    As mensagens já ficam salvas assim que você envia.<br>
+                    Quando terminar, <strong>confirme a recusa</strong> para alterar o status.
                 </span>
                 <button class="ct-recusar-btn-confirmar" id="ct-recusar-confirmar">
                     <i class="ph ph-x-circle"></i> Confirmar recusa
@@ -623,7 +853,7 @@ async function acaoRecusar(postagem, onSucesso) {
     const confBtn  = document.getElementById('ct-recusar-confirmar');
 
     // ── Renderiza histórico imediatamente ─────────────────────────────────────
-    _recRenderLista(_todasMensagens(), listaEl);
+    _recRenderLista(mensagensAtuais, listaEl);
 
     // ── Auto-resize textarea ──────────────────────────────────────────────────
     txtEl.addEventListener('input', () => {
@@ -632,6 +862,7 @@ async function acaoRecusar(postagem, onSucesso) {
     });
 
     // ── Fechar ────────────────────────────────────────────────────────────────
+    // Não apaga nada: as mensagens já enviadas já estão salvas no banco.
     const fechar = () => {
         _recCancelarAudio(st, areaEl, micBtn);
         backdrop.remove();
@@ -639,28 +870,78 @@ async function acaoRecusar(postagem, onSucesso) {
     document.getElementById('ct-recusar-close').addEventListener('click', fechar);
     backdrop.addEventListener('click', e => { if (e.target === backdrop) fechar(); });
 
-    // ── Enviar mensagem de texto ──────────────────────────────────────────────
-    const enviarTexto = () => {
+    // ── Enviar mensagem de texto (salva no banco na hora) ─────────────────────
+    const enviarTexto = async () => {
         const texto = txtEl.value.trim();
         if (!texto) return;
-        mensagensLocais.push({ tipo: 'texto', texto, em: new Date().toISOString() });
+
         txtEl.value = '';
         txtEl.style.height = 'auto';
-        _recRenderLista(_todasMensagens(), listaEl);
+
+        const novaMsg = {
+            user_name:  _getNomeUsuario().toUpperCase(),
+            created_at: new Date().toISOString(),
+            type:       'txt',
+            message:    texto,
+        };
+
+        // Mostra na hora (otimista) enquanto salva
+        mensagensAtuais = [...mensagensAtuais, novaMsg];
+        _recRenderLista(mensagensAtuais, listaEl);
+
+        try {
+            const mensagensBanco  = await _recBuscarMensagens(postagem.id);
+            const mensagensSalvas = [...mensagensBanco, novaMsg];
+
+            const { error } = await _db()
+                .from('postagens')
+                .update({ mensagens: mensagensSalvas })
+                .eq('id', postagem.id);
+            if (error) throw error;
+
+            mensagensAtuais    = mensagensSalvas;
+            postagem.mensagens = mensagensSalvas;
+
+        } catch (e) {
+            console.error('[recusar] erro ao salvar mensagem de texto:', e);
+            _toast('Erro ao salvar mensagem. Tente novamente.', 'erro');
+            // Reverte a mensagem otimista, já que não foi salva
+            mensagensAtuais = mensagensAtuais.filter(m => m !== novaMsg);
+            _recRenderLista(mensagensAtuais, listaEl);
+        }
     };
 
-    // ── Enviar áudio ──────────────────────────────────────────────────────────
+    // ── Enviar áudio (salva no banco assim que o upload termina) ──────────────
     const enviarAudio = async () => {
         if (!st.blob) return;
         sendBtn.disabled = true;
         sendBtn.innerHTML = '<i class="ph ph-circle-notch ct-spin"></i>';
         try {
             const url = await _recUploadAudio(st.blob);
-            mensagensLocais.push({ tipo: 'audio', url, em: new Date().toISOString() });
+
+            const novaMsg = {
+                user_name:  _getNomeUsuario().toUpperCase(),
+                created_at: new Date().toISOString(),
+                type:       'audio',
+                url,
+            };
+
+            const mensagensBanco  = await _recBuscarMensagens(postagem.id);
+            const mensagensSalvas = [...mensagensBanco, novaMsg];
+
+            const { error } = await _db()
+                .from('postagens')
+                .update({ mensagens: mensagensSalvas })
+                .eq('id', postagem.id);
+            if (error) throw error;
+
+            mensagensAtuais    = mensagensSalvas;
+            postagem.mensagens = mensagensSalvas;
+
             _recCancelarAudio(st, areaEl, micBtn);
-            _recRenderLista(_todasMensagens(), listaEl);
+            _recRenderLista(mensagensAtuais, listaEl);
         } catch (e) {
-            console.error('[recusar] erro upload áudio:', e);
+            console.error('[recusar] erro upload/salvar áudio:', e);
             _toast('Erro ao enviar áudio. Tente novamente.', 'erro');
         } finally {
             sendBtn.disabled = false;
@@ -669,27 +950,29 @@ async function acaoRecusar(postagem, onSucesso) {
     };
 
     sendBtn.addEventListener('click', () => {
-        if (st.temPreview && st.blob) enviarAudio();
-        else enviarTexto();
+        if (st.gravando) {
+            // Envia direto o que já foi gravado até agora (WhatsApp-like)
+            if (st.recorder && st.recorder.state === 'paused') st.recorder.resume();
+            st.recorder.onstop = async () => {
+                await _recFinalizarGravacao(st, areaEl, micBtn);
+                enviarAudio();
+            };
+            st.recorder.stop();
+        } else if (st.temPreview && st.blob) {
+            enviarAudio();
+        } else {
+            enviarTexto();
+        }
     });
 
     txtEl.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarTexto(); }
     });
 
-    // ── Microfone ─────────────────────────────────────────────────────────────
+    // ── Microfone: inicia gravação, ou pausa/retoma se já estiver gravando ─────
     micBtn.addEventListener('click', () => {
         if (st.gravando) {
-            // Para e envia automaticamente
-            st.recorder.onstop = () => {
-                st.blob = new Blob(st.chunks, { type: 'audio/webm' });
-                st.stream?.getTracks().forEach(t => t.stop());
-                Object.assign(st, { stream:null, gravando:false, temPreview:true });
-                clearInterval(st.timerInt);
-                _recRenderAudioArea(st, areaEl, micBtn);
-                enviarAudio();
-            };
-            st.recorder.stop();
+            _recTogglePausa(st, areaEl, micBtn);
         } else if (st.temPreview) {
             _recCancelarAudio(st, areaEl, micBtn);
         } else {
@@ -698,6 +981,8 @@ async function acaoRecusar(postagem, onSucesso) {
     });
 
     // ── Confirmar recusa ──────────────────────────────────────────────────────
+    // As mensagens já foram salvas em tempo real durante a conversa — aqui só
+    // muda o status e registra o log de recusa.
     confBtn.addEventListener('click', async () => {
         confBtn.disabled = true;
         confBtn.innerHTML = '<i class="ph ph-circle-notch ct-spin"></i> Salvando…';
@@ -708,7 +993,6 @@ async function acaoRecusar(postagem, onSucesso) {
 
             const { logs: logsAtuais, status: statusAtual } = await _buscarLogs(postagem.id);
 
-            // ── Monta log de recusa ───────────────────────────────────────────
             const novoLog = {
                 EM:        agora,
                 ACAO:      'PORTAL - RECUSADO',
@@ -719,43 +1003,19 @@ async function acaoRecusar(postagem, onSucesso) {
 
             const logsAtualizados = [...logsAtuais, novoLog];
 
-            // ── Busca mensagens existentes no banco e mescla ──────────────────
-            const { data: dadosAtuais } = await _db()
-                .from('postagens')
-                .select('mensagens')
-                .eq('id', postagem.id)
-                .single();
-
-            const mensagensExistentes = Array.isArray(dadosAtuais?.mensagens)
-                ? dadosAtuais.mensagens
-                : [];
-
-            // Formata mensagens locais (novas desta sessão) no padrão do banco
-            const novasMensagens = mensagensLocais.map(m => ({
-                user_name:  quem,
-                created_at: m.em,
-                type:       m.tipo === 'audio' ? 'audio' : 'txt',
-                ...(m.tipo === 'audio' ? { url: m.url } : { message: m.texto }),
-            }));
-
-            const mensagensAtualizadas = [...mensagensExistentes, ...novasMensagens];
-
-            // ── Salva tudo de uma vez ─────────────────────────────────────────
             const { error } = await _db()
                 .from('postagens')
                 .update({
-                    status:     'REPROVADO',
-                    logs:       logsAtualizados,
-                    mensagens:  mensagensAtualizadas,
+                    status: 'REPROVADO',
+                    logs:   logsAtualizados,
                 })
                 .eq('id', postagem.id);
 
             if (error) throw error;
 
             // ── Atualiza objeto local ─────────────────────────────────────────
-            postagem.status    = 'REPROVADO';
-            postagem.logs      = logsAtualizados;
-            postagem.mensagens = mensagensAtualizadas;
+            postagem.status = 'REPROVADO';
+            postagem.logs   = logsAtualizados;
 
             fechar();
             _toast('Postagem recusada com sucesso!', 'sucesso');

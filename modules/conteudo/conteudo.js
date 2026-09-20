@@ -35,6 +35,7 @@ async function render(el, conta) {
             .select(`
                 id, id_cliente, id_colaborador, status, type, title,
                 media, captions, data_agendamento, aprovado_adm_em,
+                logs, mensagens,
                 colaboradores ( nome )
             `)
             .eq('id_cliente', conta.id)
